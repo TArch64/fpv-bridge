@@ -1,0 +1,64 @@
+[package]
+name = "fpv-bridge"
+version = "0.1.0"
+edition = "2021"
+authors = ["FPV Bridge Contributors"]
+description = "Control your FPV drone with a PS5 controller via ExpressLRS"
+license = "MIT"
+repository = "https://github.com/TArch64/fpv-bridge"
+keywords = ["fpv", "drone", "elrs", "crsf", "ps5"]
+categories = ["embedded", "hardware-support"]
+
+[dependencies]
+# Async runtime
+tokio = { version = "1.35", features = ["full"] }
+tokio-serial = "5.4"
+
+# Controller input
+evdev = "0.12"
+
+# Serial communication
+serialport = "4.3"
+
+# Configuration
+serde = { version = "1.0", features = ["derive"] }
+toml = "0.8"
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+tracing-appender = "0.2"
+
+# Error handling
+thiserror = "1.0"
+anyhow = "1.0"
+
+# Telemetry logging
+serde_json = "1.0"
+chrono = "0.4"
+
+# Utilities
+bytes = "1.5"
+
+[dev-dependencies]
+# Testing
+tokio-test = "0.4"
+mockall = "0.12"
+tempfile = "3.8"
+
+[profile.release]
+# Optimize for performance
+opt-level = 3
+lto = true
+codegen-units = 1
+strip = true
+panic = "abort"
+
+[profile.dev]
+# Faster compilation for development
+opt-level = 0
+debug = true
+
+[[bin]]
+name = "fpv-bridge"
+path = "src/main.rs"
