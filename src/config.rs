@@ -253,6 +253,37 @@ impl Config {
             ));
         }
 
+        // Validate channel_reverse indices (CRSF has 16 channels: 0-15)
+        for &channel_idx in &self.channels.channel_reverse {
+            if channel_idx > 15 {
+                return Err(crate::error::FpvBridgeError::Config(
+                    toml::de::Error::custom(format!("channel_reverse index {} is out of bounds (must be 0-15)", channel_idx))
+                ));
+            }
+        }
+
+        // Validate min_throttle_to_arm is within throttle range
+        if self.safety.min_throttle_to_arm < self.channels.throttle_min
+            || self.safety.min_throttle_to_arm > self.channels.throttle_max {
+            return Err(crate::error::FpvBridgeError::Config(
+                toml::de::Error::custom("min_throttle_to_arm must be within throttle range (throttle_min to throttle_max)")
+            ));
+        }
+
+        // Validate baud rate
+        if ![115200, 400000, 420000, 921600, 1870000, 3750000].contains(&self.serial.baud_rate) {
+            return Err(crate::error::FpvBridgeError::Config(
+                toml::de::Error::custom("baud_rate must be one of: 115200, 400000, 420000, 921600, 1870000, 3750000")
+            ));
+        }
+
+        // Validate log format
+        if self.telemetry.format != "jsonl" {
+            return Err(crate::error::FpvBridgeError::Config(
+                toml::de::Error::custom("log format must be 'jsonl' (only supported format)")
+            ));
+        }
+
         // Validate packet rate
         if ![50, 150, 250, 500].contains(&self.crsf.packet_rate_hz) {
             return Err(crate::error::FpvBridgeError::Config(
