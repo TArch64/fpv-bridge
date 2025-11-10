@@ -73,7 +73,7 @@ pub fn decode_frame(frame: &[u8]) -> Result<CrsfFrame> {
     let frame_type = frame[2]; // After sync and length
     let payload = frame[3..1 + length].to_vec(); // Between type and CRC
 
-    Ok(CrsfFrame::new(frame_type, payload))
+    CrsfFrame::new(frame_type, payload)
 }
 
 /// Decode Link Statistics telemetry packet
