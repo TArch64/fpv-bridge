@@ -122,11 +122,11 @@ pub fn decode_battery_sensor(payload: &[u8]) -> Result<BatterySensor> {
         ));
     }
 
-    // Voltage: 2 bytes, little-endian, in centi-volts
+    // Voltage: 2 bytes, big-endian, in centi-volts
     let voltage_cv = u16::from_be_bytes([payload[0], payload[1]]);
     let voltage = voltage_cv as f32 / 100.0;
 
-    // Current: 2 bytes, little-endian, in deci-amps
+    // Current: 2 bytes, big-endian, in deci-amps
     let current_da = u16::from_be_bytes([payload[2], payload[3]]);
     let current = current_da as f32 / 10.0;
 
@@ -178,7 +178,7 @@ pub fn decode_gps(payload: &[u8]) -> Result<GpsData> {
 
     // Altitude: 2 bytes, big-endian, meters + 1000
     let altitude_raw = u16::from_be_bytes([payload[12], payload[13]]);
-    let altitude = altitude_raw as i16 - 1000;
+    let altitude = (altitude_raw as i32 - 1000) as i16;
 
     // Satellites: 1 byte
     let satellites = payload[14];
