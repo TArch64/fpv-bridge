@@ -98,6 +98,7 @@ pub fn encode_rc_channels_payload(channels: &RcChannels) -> Vec<u8> {
 /// # Returns
 ///
 /// * `u16` - Clamped value
+#[cfg(test)]
 pub fn clamp_channel_value(value: u16) -> u16 {
     value.min(CRSF_CHANNEL_VALUE_MAX)
 }

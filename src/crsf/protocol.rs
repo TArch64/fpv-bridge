@@ -2,6 +2,7 @@
 //!
 //! Core protocol definitions for CRSF (Crossfire) communication.
 
+#[cfg(test)]
 use crate::error::{FpvBridgeError, Result};
 
 /// CRSF frame sync byte (always 0xC8)
@@ -10,9 +11,12 @@ pub const CRSF_SYNC_BYTE: u8 = 0xC8;
 /// RC Channels packet type
 pub const CRSF_FRAMETYPE_RC_CHANNELS_PACKED: u8 = 0x16;
 
+// Telemetry-related constants available only for tests
+#[cfg(test)]
 /// Link Statistics packet type
 pub const CRSF_FRAMETYPE_LINK_STATISTICS: u8 = 0x14;
 
+#[cfg(test)]
 /// Maximum CRSF payload size
 /// Frame structure: sync(1) + length(1) + type(1) + payload(N) + crc(1)
 /// Maximum frame size is 64 bytes, so max payload = 64 - 4 = 60 bytes
@@ -28,22 +32,27 @@ pub const CRSF_RC_CHANNELS_FRAME_LENGTH: u8 = 0x18; // 24 bytes
 pub const CRSF_NUM_CHANNELS: usize = 16;
 
 /// Channel value range (11-bit: 0-2047)
+#[cfg(test)]
 pub const CRSF_CHANNEL_VALUE_MIN: u16 = 0;
 pub const CRSF_CHANNEL_VALUE_MAX: u16 = 2047;
 pub const CRSF_CHANNEL_VALUE_CENTER: u16 = 1024;
 
+#[cfg(test)]
 /// Link Statistics payload size
 pub const CRSF_LINK_STATS_PAYLOAD_SIZE: usize = 10;
 
+#[cfg(test)]
 /// Battery Sensor payload size
 pub const CRSF_BATTERY_SENSOR_PAYLOAD_SIZE: usize = 8;
 
+#[cfg(test)]
 /// GPS payload size
 pub const CRSF_GPS_PAYLOAD_SIZE: usize = 15;
 
 /// RC channels array type (16 channels, 11-bit values)
 pub type RcChannels = [u16; CRSF_NUM_CHANNELS];
 
+#[cfg(test)]
 /// Link statistics telemetry data
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct LinkStatistics {
@@ -78,6 +87,7 @@ pub struct LinkStatistics {
     pub downlink_snr: i8,
 }
 
+#[cfg(test)]
 /// Battery sensor telemetry data
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct BatterySensor {
@@ -94,6 +104,7 @@ pub struct BatterySensor {
     pub remaining_percent: u8,
 }
 
+#[cfg(test)]
 /// GPS telemetry data
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct GpsData {
@@ -116,6 +127,7 @@ pub struct GpsData {
     pub satellites: u8,
 }
 
+#[cfg(test)]
 /// CRSF frame structure
 #[derive(Debug, Clone)]
 pub struct CrsfFrame {
@@ -126,6 +138,7 @@ pub struct CrsfFrame {
     pub payload: Vec<u8>,
 }
 
+#[cfg(test)]
 impl CrsfFrame {
     /// Create a new CRSF frame
     ///

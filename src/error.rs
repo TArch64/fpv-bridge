@@ -7,7 +7,8 @@ use thiserror::Error;
 /// Main error type for FPV Bridge
 #[derive(Debug, Error)]
 pub enum FpvBridgeError {
-    /// CRSF protocol errors
+    /// CRSF protocol errors (used in tests)
+    #[cfg(test)]
     #[error("CRSF protocol error: {0}")]
     CrsfProtocol(String),
 

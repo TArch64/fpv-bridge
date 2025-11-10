@@ -157,6 +157,52 @@ fn default_min_throttle_to_arm() -> u16 { 1050 }
 fn default_packet_rate_hz() -> u32 { 250 }
 fn default_link_stats_interval_ms() -> u64 { 1000 }
 
+impl Default for Config {
+    fn default() -> Self {
+        Self {
+            serial: SerialConfig {
+                port: default_serial_port(),
+                baud_rate: default_baud_rate(),
+                timeout_ms: default_timeout_ms(),
+                reconnect_interval_ms: default_reconnect_interval_ms(),
+            },
+            controller: ControllerConfig {
+                device_path: String::new(),
+                deadzone_stick: default_deadzone_stick(),
+                deadzone_trigger: default_deadzone_trigger(),
+                expo_roll: default_expo_roll(),
+                expo_pitch: default_expo_pitch(),
+                expo_yaw: default_expo_yaw(),
+                expo_throttle: default_expo_throttle(),
+            },
+            channels: ChannelConfig {
+                throttle_min: default_throttle_min(),
+                throttle_max: default_throttle_max(),
+                center: default_center(),
+                channel_reverse: vec![],
+            },
+            telemetry: TelemetryConfig {
+                enabled: default_telemetry_enabled(),
+                log_dir: default_log_dir(),
+                max_records_per_file: default_max_records_per_file(),
+                max_files_to_keep: default_max_files_to_keep(),
+                log_interval_ms: default_log_interval_ms(),
+                format: default_log_format(),
+            },
+            safety: SafetyConfig {
+                arm_button_hold_ms: default_arm_button_hold_ms(),
+                auto_disarm_timeout_s: default_auto_disarm_timeout_s(),
+                failsafe_timeout_ms: default_failsafe_timeout_ms(),
+                min_throttle_to_arm: default_min_throttle_to_arm(),
+            },
+            crsf: CrsfConfig {
+                packet_rate_hz: default_packet_rate_hz(),
+                link_stats_interval_ms: default_link_stats_interval_ms(),
+            },
+        }
+    }
+}
+
 impl Config {
     /// Load configuration from a TOML file
     ///
