@@ -39,6 +39,13 @@ pub fn decode_frame(frame: &[u8]) -> Result<CrsfFrame> {
 
     let length = frame[1] as usize;
 
+    // Validate length field (minimum: type(1) + crc(1) = 2 bytes)
+    if length < 2 {
+        return Err(FpvBridgeError::CrsfProtocol(
+            format!("Length field too small: {}", length)
+        ));
+    }
+
     // Verify frame size matches length field
     // Frame should be: sync(1) + length(1) + [length bytes]
     // where [length bytes] = type(1) + payload(N) + crc(1)
@@ -201,6 +208,19 @@ mod tests {
     #[test]
     fn test_decode_frame_invalid_sync() {
         let frame = [0xFF, 0x03, 0x16, 0x00];
+        let result = decode_frame(&frame);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_decode_frame_length_too_small() {
+        // Test with length = 0 (corrupted)
+        let frame = [CRSF_SYNC_BYTE, 0x00, 0x16, 0x00];
+        let result = decode_frame(&frame);
+        assert!(result.is_err());
+
+        // Test with length = 1 (corrupted)
+        let frame = [CRSF_SYNC_BYTE, 0x01, 0x16, 0x00];
         let result = decode_frame(&frame);
         assert!(result.is_err());
     }
