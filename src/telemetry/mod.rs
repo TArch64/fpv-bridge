@@ -15,6 +15,8 @@ use serde::Serialize;
 // pub mod logger;
 // pub mod types;
 
+// Placeholder types - will be implemented in future PRs
+#[allow(dead_code)]
 /// Telemetry data entry
 #[derive(Debug, Clone, Serialize)]
 pub struct TelemetryEntry {
@@ -65,6 +67,7 @@ pub struct TelemetryEntry {
     pub gps: Option<GpsData>,
 }
 
+#[allow(dead_code)]
 /// GPS telemetry data
 #[derive(Debug, Clone, Serialize)]
 pub struct GpsData {

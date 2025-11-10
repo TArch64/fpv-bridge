@@ -6,6 +6,7 @@ use thiserror::Error;
 
 /// Main error type for FPV Bridge
 #[derive(Debug, Error)]
+#[allow(dead_code)]
 pub enum FpvBridgeError {
     /// Serial port errors
     #[error("Serial port error: {0}")]

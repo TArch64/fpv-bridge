@@ -22,6 +22,7 @@ pub struct Config {
 
 /// Serial port configuration
 #[derive(Debug, Deserialize, Clone)]
+#[allow(dead_code)]
 pub struct SerialConfig {
     #[serde(default = "default_serial_port")]
     pub port: String,
@@ -38,6 +39,7 @@ pub struct SerialConfig {
 
 /// Controller configuration
 #[derive(Debug, Deserialize, Clone)]
+#[allow(dead_code)]
 pub struct ControllerConfig {
     #[serde(default)]
     pub device_path: String,
@@ -79,6 +81,7 @@ pub struct ChannelConfig {
 
 /// Telemetry configuration
 #[derive(Debug, Deserialize, Clone)]
+#[allow(dead_code)]
 pub struct TelemetryConfig {
     #[serde(default = "default_telemetry_enabled")]
     pub enabled: bool,
@@ -183,6 +186,7 @@ impl Config {
     /// let config = Config::load("config/default.toml")?;
     /// # Ok::<(), Box<dyn std::error::Error>>(())
     /// ```
+    #[allow(dead_code)]
     pub fn load<P: AsRef<Path>>(path: P) -> Result<Self> {
         let contents = fs::read_to_string(path)?;
         let config: Config = toml::from_str(&contents)?;
@@ -404,7 +408,7 @@ mod tests {
 
     #[test]
     fn test_invalid_deadzone() {
-        let mut config = Config {
+        let config = Config {
             serial: SerialConfig {
                 port: default_serial_port(),
                 baud_rate: default_baud_rate(),

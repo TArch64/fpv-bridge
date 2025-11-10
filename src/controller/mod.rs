@@ -14,7 +14,8 @@
 // pub mod mapper;
 // pub mod calibration;
 
-// Placeholder types
+// Placeholder types - will be implemented in future PRs
+#[allow(dead_code)]
 /// Controller state
 #[derive(Debug, Clone, Default)]
 pub struct ControllerState {

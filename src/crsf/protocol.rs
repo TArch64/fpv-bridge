@@ -12,15 +12,19 @@ pub const CRSF_FRAMETYPE_RC_CHANNELS_PACKED: u8 = 0x16;
 pub const CRSF_FRAMETYPE_LINK_STATISTICS: u8 = 0x14;
 
 /// Battery Sensor packet type
+#[allow(dead_code)]
 pub const CRSF_FRAMETYPE_BATTERY_SENSOR: u8 = 0x08;
 
 /// GPS packet type
+#[allow(dead_code)]
 pub const CRSF_FRAMETYPE_GPS: u8 = 0x02;
 
 /// Attitude packet type
+#[allow(dead_code)]
 pub const CRSF_FRAMETYPE_ATTITUDE: u8 = 0x1E;
 
 /// Maximum frame size (sync + length + type + payload + crc)
+#[allow(dead_code)]
 pub const CRSF_MAX_FRAME_SIZE: usize = 64;
 
 /// RC channels payload size (22 bytes for 16 channels × 11 bits)

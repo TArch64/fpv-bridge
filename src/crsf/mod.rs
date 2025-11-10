@@ -14,6 +14,8 @@ pub mod decoder;
 pub mod crc;
 
 // Re-export commonly used types and functions
+// These will be used when the main application is fully implemented
+#[allow(unused_imports)]
 pub use protocol::{
     RcChannels,
     CrsfFrame,
@@ -31,12 +33,14 @@ pub use protocol::{
     CRSF_CHANNEL_VALUE_CENTER,
 };
 
+#[allow(unused_imports)]
 pub use encoder::{
     encode_rc_channels_frame,
     encode_rc_channels_payload,
     clamp_channel_value,
 };
 
+#[allow(unused_imports)]
 pub use decoder::{
     decode_frame,
     decode_link_statistics,
@@ -44,4 +48,5 @@ pub use decoder::{
     decode_gps,
 };
 
+#[allow(unused_imports)]
 pub use crc::crc8_dvb_s2;
