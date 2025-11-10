@@ -200,6 +200,44 @@ impl Config {
     ///
     /// Returns error if any configuration value is out of valid range
     fn validate(&self) -> Result<()> {
+        // Validate timing fields
+        if self.serial.timeout_ms == 0 || self.serial.timeout_ms > 10000 {
+            return Err(crate::error::FpvBridgeError::Config(
+                toml::de::Error::custom("timeout_ms must be between 1 and 10000")
+            ));
+        }
+
+        if self.serial.reconnect_interval_ms == 0 || self.serial.reconnect_interval_ms > 60000 {
+            return Err(crate::error::FpvBridgeError::Config(
+                toml::de::Error::custom("reconnect_interval_ms must be between 1 and 60000")
+            ));
+        }
+
+        if self.telemetry.log_interval_ms == 0 || self.telemetry.log_interval_ms > 60000 {
+            return Err(crate::error::FpvBridgeError::Config(
+                toml::de::Error::custom("log_interval_ms must be between 1 and 60000")
+            ));
+        }
+
+        if self.safety.failsafe_timeout_ms == 0 || self.safety.failsafe_timeout_ms > 60000 {
+            return Err(crate::error::FpvBridgeError::Config(
+                toml::de::Error::custom("failsafe_timeout_ms must be between 1 and 60000")
+            ));
+        }
+
+        // Validate telemetry file limits
+        if self.telemetry.max_records_per_file == 0 {
+            return Err(crate::error::FpvBridgeError::Config(
+                toml::de::Error::custom("max_records_per_file must be greater than 0")
+            ));
+        }
+
+        if self.telemetry.max_files_to_keep == 0 {
+            return Err(crate::error::FpvBridgeError::Config(
+                toml::de::Error::custom("max_files_to_keep must be greater than 0")
+            ));
+        }
+
         // Validate deadzones
         if self.controller.deadzone_stick < 0.0 || self.controller.deadzone_stick > 0.25 {
             return Err(crate::error::FpvBridgeError::Config(
