@@ -11,8 +11,3 @@
 
 // Module exports will be added as we implement submodules
 // pub mod port;
-
-/// Serial port handle (placeholder)
-pub struct SerialPort {
-    // Implementation will be added
-}

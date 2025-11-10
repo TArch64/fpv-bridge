@@ -6,7 +6,7 @@
 //! for controlling ExpressLRS-enabled drones.
 
 use anyhow::Result;
-use tracing::{info, error};
+use tracing::info;
 use tracing_subscriber;
 
 mod config;

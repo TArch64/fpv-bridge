@@ -200,6 +200,24 @@ impl Config {
     ///
     /// Returns error if any configuration value is out of valid range
     fn validate(&self) -> Result<()> {
+        // Validate serial port configuration
+        if self.serial.port.is_empty() {
+            return Err(crate::error::FpvBridgeError::Config(
+                toml::de::Error::custom("serial port cannot be empty")
+            ));
+        }
+
+        // Validate telemetry configuration
+        if self.telemetry.enabled && self.telemetry.log_dir.is_empty() {
+            return Err(crate::error::FpvBridgeError::Config(
+                toml::de::Error::custom("telemetry log_dir cannot be empty when enabled")
+            ));
+        }
+
+        // Controller device_path can be empty (auto-detect)
+        // Just accessing it to suppress dead code warning
+        let _ = &self.controller.device_path;
+
         // Validate timing fields
         if self.serial.timeout_ms == 0 || self.serial.timeout_ms > 10000 {
             return Err(crate::error::FpvBridgeError::Config(
@@ -404,7 +422,7 @@ mod tests {
 
     #[test]
     fn test_invalid_deadzone() {
-        let mut config = Config {
+        let config = Config {
             serial: SerialConfig {
                 port: default_serial_port(),
                 baud_rate: default_baud_rate(),
@@ -447,5 +465,33 @@ mod tests {
         };
 
         assert!(config.validate().is_err());
+    }
+
+    #[test]
+    fn test_load_config_from_file() {
+        use std::io::Write;
+        use tempfile::NamedTempFile;
+
+        let toml_content = r#"
+[serial]
+port = "/dev/ttyUSB0"
+
+[controller]
+
+[channels]
+
+[telemetry]
+
+[safety]
+
+[crsf]
+"#;
+
+        let mut temp_file = NamedTempFile::new().unwrap();
+        temp_file.write_all(toml_content.as_bytes()).unwrap();
+        temp_file.flush().unwrap();
+
+        let result = Config::load(temp_file.path());
+        assert!(result.is_ok());
     }
 }

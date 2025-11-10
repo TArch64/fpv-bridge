@@ -56,6 +56,10 @@ panic = "abort"
 opt-level = 0
 debug = true
 
+[lib]
+name = "fpv_bridge"
+path = "src/lib.rs"
+
 [[bin]]
 name = "fpv-bridge"
 path = "src/main.rs"
