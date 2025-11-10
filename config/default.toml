@@ -1,0 +1,54 @@
+# FPV Bridge - Default Configuration
+# Copy this file to customize your setup
+
+[serial]
+# Serial port for ELRS USB module
+port = "/dev/ttyACM0"
+baud_rate = 420000
+timeout_ms = 100
+reconnect_interval_ms = 1000
+
+[controller]
+# PS5 DualSense controller settings
+# Leave device_path empty for auto-detection
+device_path = ""
+
+# Deadzones (0.0 to 0.25)
+deadzone_stick = 0.05     # 5% deadzone for analog sticks
+deadzone_trigger = 0.10   # 10% deadzone for L2/R2
+
+# Exponential curves (0.0 = linear, 1.0 = max expo)
+expo_roll = 0.3
+expo_pitch = 0.3
+expo_yaw = 0.2
+expo_throttle = 0.0       # Throttle typically linear
+
+[channels]
+# RC channel configuration
+throttle_min = 1000
+throttle_max = 2000
+center = 1500
+
+# Reverse channels if needed (e.g., [1, 2] to reverse roll and pitch)
+channel_reverse = []
+
+[telemetry]
+# Telemetry logging settings
+enabled = true
+log_dir = "./logs"
+max_records_per_file = 10000
+max_files_to_keep = 10
+log_interval_ms = 100     # Log every 100ms (10Hz)
+format = "jsonl"
+
+[safety]
+# Safety features
+arm_button_hold_ms = 1000           # Hold L1 for 1s to arm
+auto_disarm_timeout_s = 300         # Auto-disarm after 5min no input
+failsafe_timeout_ms = 500           # Disarm if controller lost >500ms
+min_throttle_to_arm = 1050          # Throttle must be low to arm
+
+[crsf]
+# CRSF protocol settings
+packet_rate_hz = 250                # ELRS 250Hz mode
+link_stats_interval_ms = 1000       # Request link stats every 1s

@@ -1,0 +1,42 @@
+# Rust
+/target/
+Cargo.lock
+**/*.rs.bk
+*.pdb
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+logs/
+*.log
+*.jsonl
+
+# Config (keep examples)
+config/local.toml
+config/production.toml
+
+# Build artifacts
+*.o
+*.so
+*.dylib
+*.dll
+*.a
+
+# Testing
+/coverage/
+tarpaulin-report.html
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+
+# System files
+.env
+.env.local
