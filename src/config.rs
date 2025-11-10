@@ -225,6 +225,24 @@ impl Config {
             ));
         }
 
+        if self.safety.arm_button_hold_ms == 0 || self.safety.arm_button_hold_ms > 10000 {
+            return Err(crate::error::FpvBridgeError::Config(
+                toml::de::Error::custom("arm_button_hold_ms must be between 1 and 10000")
+            ));
+        }
+
+        if self.safety.auto_disarm_timeout_s == 0 {
+            return Err(crate::error::FpvBridgeError::Config(
+                toml::de::Error::custom("auto_disarm_timeout_s must be greater than 0")
+            ));
+        }
+
+        if self.crsf.link_stats_interval_ms == 0 || self.crsf.link_stats_interval_ms > 60000 {
+            return Err(crate::error::FpvBridgeError::Config(
+                toml::de::Error::custom("link_stats_interval_ms must be between 1 and 60000")
+            ));
+        }
+
         // Validate telemetry file limits
         if self.telemetry.max_records_per_file == 0 {
             return Err(crate::error::FpvBridgeError::Config(
