@@ -240,6 +240,19 @@ impl Config {
             ));
         }
 
+        if self.channels.throttle_min >= self.channels.throttle_max {
+            return Err(crate::error::FpvBridgeError::Config(
+                toml::de::Error::custom("throttle_min must be less than throttle_max")
+            ));
+        }
+
+        if self.channels.center < self.channels.throttle_min
+            || self.channels.center > self.channels.throttle_max {
+            return Err(crate::error::FpvBridgeError::Config(
+                toml::de::Error::custom("center must be within throttle range (throttle_min to throttle_max)")
+            ));
+        }
+
         // Validate packet rate
         if ![50, 150, 250, 500].contains(&self.crsf.packet_rate_hz) {
             return Err(crate::error::FpvBridgeError::Config(
