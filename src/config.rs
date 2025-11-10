@@ -22,7 +22,6 @@ pub struct Config {
 
 /// Serial port configuration
 #[derive(Debug, Deserialize, Clone)]
-#[allow(dead_code)]
 pub struct SerialConfig {
     #[serde(default = "default_serial_port")]
     pub port: String,
@@ -39,7 +38,6 @@ pub struct SerialConfig {
 
 /// Controller configuration
 #[derive(Debug, Deserialize, Clone)]
-#[allow(dead_code)]
 pub struct ControllerConfig {
     #[serde(default)]
     pub device_path: String,
@@ -81,7 +79,6 @@ pub struct ChannelConfig {
 
 /// Telemetry configuration
 #[derive(Debug, Deserialize, Clone)]
-#[allow(dead_code)]
 pub struct TelemetryConfig {
     #[serde(default = "default_telemetry_enabled")]
     pub enabled: bool,
@@ -186,7 +183,6 @@ impl Config {
     /// let config = Config::load("config/default.toml")?;
     /// # Ok::<(), Box<dyn std::error::Error>>(())
     /// ```
-    #[allow(dead_code)]
     pub fn load<P: AsRef<Path>>(path: P) -> Result<Self> {
         let contents = fs::read_to_string(path)?;
         let config: Config = toml::from_str(&contents)?;
@@ -204,6 +200,24 @@ impl Config {
     ///
     /// Returns error if any configuration value is out of valid range
     fn validate(&self) -> Result<()> {
+        // Validate serial port configuration
+        if self.serial.port.is_empty() {
+            return Err(crate::error::FpvBridgeError::Config(
+                toml::de::Error::custom("serial port cannot be empty")
+            ));
+        }
+
+        // Validate telemetry configuration
+        if self.telemetry.enabled && self.telemetry.log_dir.is_empty() {
+            return Err(crate::error::FpvBridgeError::Config(
+                toml::de::Error::custom("telemetry log_dir cannot be empty when enabled")
+            ));
+        }
+
+        // Controller device_path can be empty (auto-detect)
+        // Just accessing it to suppress dead code warning
+        let _ = &self.controller.device_path;
+
         // Validate timing fields
         if self.serial.timeout_ms == 0 || self.serial.timeout_ms > 10000 {
             return Err(crate::error::FpvBridgeError::Config(
@@ -451,5 +465,33 @@ mod tests {
         };
 
         assert!(config.validate().is_err());
+    }
+
+    #[test]
+    fn test_load_config_from_file() {
+        use std::io::Write;
+        use tempfile::NamedTempFile;
+
+        let toml_content = r#"
+[serial]
+port = "/dev/ttyUSB0"
+
+[controller]
+
+[channels]
+
+[telemetry]
+
+[safety]
+
+[crsf]
+"#;
+
+        let mut temp_file = NamedTempFile::new().unwrap();
+        temp_file.write_all(toml_content.as_bytes()).unwrap();
+        temp_file.flush().unwrap();
+
+        let result = Config::load(temp_file.path());
+        assert!(result.is_ok());
     }
 }

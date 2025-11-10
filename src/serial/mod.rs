@@ -11,10 +11,3 @@
 
 // Module exports will be added as we implement submodules
 // pub mod port;
-
-// Placeholder types - will be implemented in future PRs
-#[allow(dead_code)]
-/// Serial port handle (placeholder)
-pub struct SerialPort {
-    // Implementation will be added
-}
