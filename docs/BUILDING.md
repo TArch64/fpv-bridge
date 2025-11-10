@@ -52,7 +52,8 @@ cargo --version
 ```
 
 Expected output:
-```
+
+```text
 rustc 1.75.0 (or newer)
 cargo 1.75.0 (or newer)
 ```
@@ -138,6 +139,7 @@ linker = "arm-linux-gnueabihf-gcc"
 ```
 
 **For macOS** (using brew cross-compiler):
+
 ```toml
 [target.armv7-unknown-linux-gnueabihf]
 linker = "armv7-unknown-linux-gnueabihf-gcc"
@@ -148,6 +150,7 @@ linker = "armv7-unknown-linux-gnueabihf-gcc"
 **Option A: Use Docker (Recommended)**
 
 Create `Dockerfile.cross`:
+
 ```dockerfile
 FROM ubuntu:22.04
 
@@ -166,6 +169,7 @@ WORKDIR /build
 ```
 
 Build and use:
+
 ```bash
 docker build -f Dockerfile.cross -t fpv-bridge-cross .
 docker run --rm -v $(pwd):/build fpv-bridge-cross \
@@ -175,6 +179,7 @@ docker run --rm -v $(pwd):/build fpv-bridge-cross \
 **Option B: Manual Setup**
 
 Download ARM libraries from Raspberry Pi (one-time):
+
 ```bash
 # On your Pi
 tar -czf pi-libs.tar.gz /usr/lib/arm-linux-gnueabihf /lib/arm-linux-gnueabihf
@@ -245,6 +250,7 @@ sudo chown $USER:$USER /var/log/fpv-bridge
 ```
 
 Update config to use system paths:
+
 ```toml
 [telemetry]
 log_dir = "/var/log/fpv-bridge"
@@ -554,6 +560,7 @@ echo "Run on Pi: cd $PI_DIR && ./fpv-bridge"
 ```
 
 **Usage**:
+
 ```bash
 chmod +x scripts/cross_compile.sh
 ./scripts/cross_compile.sh
@@ -602,6 +609,7 @@ echo "Please log out and back in for group changes to take effect."
 ```
 
 **Usage** (run on Pi):
+
 ```bash
 wget https://raw.githubusercontent.com/TArch64/fpv-bridge/main/scripts/setup_pi.sh
 chmod +x setup_pi.sh

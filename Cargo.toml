@@ -11,14 +11,11 @@ categories = ["embedded", "hardware-support"]
 
 [dependencies]
 # Async runtime
-tokio = { version = "1.35", features = ["full"] }
+tokio = { version = "1.35", features = ["rt-multi-thread", "macros", "signal", "time", "sync"] }
 tokio-serial = "5.4"
 
 # Controller input
 evdev = "0.12"
-
-# Serial communication
-serialport = "4.3"
 
 # Configuration
 serde = { version = "1.0", features = ["derive"] }

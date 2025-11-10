@@ -62,6 +62,7 @@ array = [1, 2, 3]
 **Default**: `"/dev/ttyACM0"`
 
 **Examples**:
+
 ```toml
 port = "/dev/ttyACM0"  # Most common for BetaFPV ELRS USB
 port = "/dev/ttyUSB0"  # Alternative USB serial
@@ -81,6 +82,7 @@ port = "/dev/elrs_tx"  # Custom udev symlink
 **Valid Values**: `420000` (CRSF standard)
 
 **Examples**:
+
 ```toml
 baud_rate = 420000  # CRSF standard, DO NOT CHANGE
 ```
@@ -97,6 +99,7 @@ baud_rate = 420000  # CRSF standard, DO NOT CHANGE
 **Range**: `10` to `5000`
 
 **Examples**:
+
 ```toml
 timeout_ms = 100   # Default
 timeout_ms = 200   # More tolerant of delays
@@ -129,6 +132,7 @@ reconnect_interval_ms = 5000  # Retry every 5 seconds
 **Default**: Auto-detect first available PS5 controller
 
 **Examples**:
+
 ```toml
 device_path = "/dev/input/event0"  # Explicit device
 # device_path = ""  # Auto-detect (default)
@@ -147,6 +151,7 @@ device_path = "/dev/input/event0"  # Explicit device
 **Range**: `0.0` to `0.25` (0% to 25%)
 
 **Examples**:
+
 ```toml
 deadzone_stick = 0.05  # 5% deadzone
 deadzone_stick = 0.10  # 10% for worn sticks
@@ -166,6 +171,7 @@ deadzone_stick = 0.0   # No deadzone (not recommended)
 **Range**: `0.0` to `0.25`
 
 **Examples**:
+
 ```toml
 deadzone_trigger = 0.10  # Default
 deadzone_trigger = 0.15  # If triggers are sensitive
@@ -179,6 +185,7 @@ deadzone_trigger = 0.15  # If triggers are sensitive
 **Range**: `0.0` (linear) to `1.0` (maximum expo)
 
 **Examples**:
+
 ```toml
 expo_roll = 0.0   # Linear response
 expo_roll = 0.3   # Gentle curve (default)
@@ -233,6 +240,7 @@ expo_roll = 0.7   # Aggressive curve
 **Range**: `988` to `1500`
 
 **Examples**:
+
 ```toml
 throttle_min = 1000  # Standard minimum
 throttle_min = 1100  # Higher minimum (safety margin)
@@ -262,6 +270,7 @@ throttle_min = 1100  # Higher minimum (safety margin)
 **Default**: `[]` (none reversed)
 
 **Examples**:
+
 ```toml
 channel_reverse = [2]       # Reverse pitch only
 channel_reverse = [1, 2]    # Reverse roll and pitch
@@ -286,6 +295,7 @@ channel_reverse = []        # No reversing
 **Default**: `true`
 
 **Examples**:
+
 ```toml
 enabled = true   # Logging on
 enabled = false  # Logging off
@@ -297,6 +307,7 @@ enabled = false  # Logging off
 **Default**: `"./logs"`
 
 **Examples**:
+
 ```toml
 log_dir = "./logs"
 log_dir = "/var/log/fpv-bridge"
@@ -315,6 +326,7 @@ log_dir = "/home/pi/telemetry"
 **Range**: `100` to `1000000`
 
 **Examples**:
+
 ```toml
 max_records_per_file = 10000   # Default (~1MB file)
 max_records_per_file = 50000   # Larger files
@@ -329,6 +341,7 @@ max_records_per_file = 1000    # Small files for testing
 **Range**: `1` to `100`
 
 **Examples**:
+
 ```toml
 max_files_to_keep = 10   # Keep last 10 files
 max_files_to_keep = 50   # Keep more history
@@ -343,6 +356,7 @@ max_files_to_keep = 1    # Keep only current file
 **Range**: `10` to `10000`
 
 **Examples**:
+
 ```toml
 log_interval_ms = 100   # 10Hz logging (default)
 log_interval_ms = 50    # 20Hz logging (more data)
@@ -361,6 +375,7 @@ log_interval_ms = 1000  # 1Hz logging (less data)
 **Valid Values**: `"jsonl"` (JSON Lines)
 
 **Examples**:
+
 ```toml
 format = "jsonl"  # JSON Lines (one JSON object per line)
 ```
@@ -385,6 +400,7 @@ format = "jsonl"  # JSON Lines (one JSON object per line)
 **Range**: `0` to `5000`
 
 **Examples**:
+
 ```toml
 arm_button_hold_ms = 1000  # Default
 arm_button_hold_ms = 2000  # Extra safety (2s hold)
@@ -403,6 +419,7 @@ arm_button_hold_ms = 0     # Instant arm (not recommended)
 **Range**: `0` (disabled) to `3600` (1 hour)
 
 **Examples**:
+
 ```toml
 auto_disarm_timeout_s = 300   # 5 minutes
 auto_disarm_timeout_s = 60    # 1 minute (aggressive)
@@ -417,6 +434,7 @@ auto_disarm_timeout_s = 0     # Disabled (not recommended)
 **Range**: `100` to `5000`
 
 **Examples**:
+
 ```toml
 failsafe_timeout_ms = 500    # Default
 failsafe_timeout_ms = 1000   # More tolerant
@@ -431,6 +449,7 @@ failsafe_timeout_ms = 100    # Very aggressive
 **Range**: `1000` to `1200`
 
 **Examples**:
+
 ```toml
 min_throttle_to_arm = 1050  # Default
 min_throttle_to_arm = 1100  # Stricter safety check
@@ -456,6 +475,7 @@ min_throttle_to_arm = 1100  # Stricter safety check
 **Valid Values**: `50`, `150`, `250`, `500`
 
 **Examples**:
+
 ```toml
 packet_rate_hz = 250  # Default, good balance
 packet_rate_hz = 500  # Lower latency (if ELRS module supports)
@@ -669,6 +689,7 @@ fpv-bridge [OPTIONS]
 **Description**: Path to configuration file
 
 **Example**:
+
 ```bash
 fpv-bridge --config /etc/fpv-bridge/custom.toml
 ```
@@ -681,6 +702,7 @@ fpv-bridge --config /etc/fpv-bridge/custom.toml
 **Default**: `info`
 
 **Example**:
+
 ```bash
 fpv-bridge --log-level debug
 ```
@@ -689,6 +711,7 @@ fpv-bridge --log-level debug
 **Description**: Validate configuration without running
 
 **Example**:
+
 ```bash
 fpv-bridge --config myconfig.toml --dry-run
 ```
@@ -697,6 +720,7 @@ fpv-bridge --config myconfig.toml --dry-run
 **Description**: Print version and exit
 
 **Example**:
+
 ```bash
 fpv-bridge --version
 ```
@@ -705,6 +729,7 @@ fpv-bridge --version
 **Description**: Print help message
 
 **Example**:
+
 ```bash
 fpv-bridge --help
 ```
@@ -727,18 +752,21 @@ On startup, FPV Bridge validates all configuration values:
 ### Example Errors
 
 **Missing serial port**:
-```
+
+```text
 Error: Serial port /dev/ttyACM0 not found
 Hint: Check USB connection and run 'ls /dev/ttyACM*'
 ```
 
 **Invalid range**:
-```
+
+```text
 Error: deadzone_stick must be between 0.0 and 0.25, got 0.5
 ```
 
 **Permission denied**:
-```
+
+```text
 Error: Cannot open /dev/ttyACM0: Permission denied
 Hint: Add user to dialout group: sudo usermod -a -G dialout $USER
 ```
@@ -751,7 +779,8 @@ fpv-bridge --config myconfig.toml --dry-run
 ```
 
 **Output**:
-```
+
+```text
 ✓ Configuration loaded: myconfig.toml
 ✓ Serial port accessible: /dev/ttyACM0
 ✓ Log directory writable: ./logs

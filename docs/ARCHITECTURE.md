@@ -8,7 +8,7 @@ The FPV Bridge is an asynchronous, event-driven system built with Rust and the T
 
 ## High-Level Architecture
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────┐
 │                         FPV Bridge Application                   │
 │                                                                   │
@@ -82,7 +82,8 @@ async fn main() -> Result<()> {
 ### 2. Controller Handler (`src/controller/`)
 
 **Module Structure:**
-```
+
+```text
 controller/
 ├── mod.rs           # Module exports and high-level coordination
 ├── ps5.rs           # PS5 DualSense input handling via evdev
@@ -92,7 +93,8 @@ controller/
 ```
 
 **Data Flow:**
-```
+
+```text
 evdev Device
     ↓ (Raw Input Events)
 PS5InputHandler
@@ -138,7 +140,8 @@ pub async fn run(config: ControllerConfig, rc_tx: Sender<RcChannels>) -> Result<
 ### 3. CRSF Protocol (`src/crsf/`)
 
 **Module Structure:**
-```
+
+```text
 crsf/
 ├── mod.rs           # Module exports
 ├── protocol.rs      # Packet structures and constants
@@ -150,7 +153,7 @@ crsf/
 
 **Packet Structure:**
 
-```
+```text
 CRSF Frame Format:
 ┌────────┬────────┬────────┬─────────────┬────────┐
 │ SYNC   │ LENGTH │  TYPE  │   PAYLOAD   │  CRC8  │
@@ -181,7 +184,8 @@ RC Channels Packet (Type 0x16):
 ### 4. Serial Handler (`src/serial/`)
 
 **Module Structure:**
-```
+
+```text
 serial/
 ├── mod.rs           # Module exports
 ├── port.rs          # Serial port management
@@ -246,7 +250,8 @@ pub async fn run(
 ### 5. Telemetry Logger (`src/telemetry/`)
 
 **Module Structure:**
-```
+
+```text
 telemetry/
 ├── mod.rs           # Module exports
 ├── logger.rs        # Rotating log file writer
@@ -263,7 +268,7 @@ telemetry/
 
 **Rotating Log Strategy:**
 
-```
+```text
 logs/
 ├── telemetry_20251109_143045.jsonl  (active, 8,234 records)
 ├── telemetry_20251109_135012.jsonl  (10,000 records)
@@ -363,7 +368,7 @@ fn default_serial_port() -> String {
 
 ### Control Path (Controller → Drone)
 
-```
+```text
 ┌─────────────┐
 │ PS5 Sticks  │
 │ & Buttons   │
@@ -421,7 +426,7 @@ fn default_serial_port() -> String {
 
 ### Telemetry Path (Drone → Logger)
 
-```
+```text
 ┌─────────────┐
 │   Drone FC  │ (Battery sensor, GPS, etc.)
 └──────┬──────┘
@@ -480,7 +485,7 @@ async fn main() {
 
 Each subsystem runs as an independent async task:
 
-```
+```text
 ┌────────────────────────────────────────┐
 │         Tokio Runtime (4 threads)      │
 │                                        │
@@ -575,7 +580,7 @@ impl FailsafeCondition {
 
 ### Arming State Machine
 
-```
+```text
 ┌──────────┐
 │ Disarmed │◀─────────────────────────┐
 └────┬─────┘                          │
@@ -647,7 +652,7 @@ impl FailsafeCondition {
 
 ### Development Workflow
 
-```
+```text
 ┌─────────────┐
 │   Dev PC    │
 │  (x86_64)   │
@@ -673,7 +678,7 @@ impl FailsafeCondition {
 
 ### Production Deployment
 
-```
+```text
 Pi Zero 2 W:
 ├── /home/pi/fpv-bridge/
 │   ├── fpv-bridge           (executable)

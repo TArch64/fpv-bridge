@@ -21,17 +21,21 @@ This guide helps you diagnose and resolve common issues with FPV Bridge.
 ### Enable Debug Logging
 
 **Temporary** (for current session):
+
 ```bash
 RUST_LOG=debug ./fpv-bridge
 ```
 
 **Persistent** (in systemd service):
+
 Edit `/etc/systemd/system/fpv-bridge.service`:
+
 ```ini
 Environment="RUST_LOG=debug"
 ```
 
 Then restart:
+
 ```bash
 sudo systemctl restart fpv-bridge
 ```
@@ -47,6 +51,7 @@ sudo systemctl restart fpv-bridge
 | `trace` | Development | Very high (all events) |
 
 **Example**:
+
 ```bash
 RUST_LOG=trace ./fpv-bridge
 ```
@@ -102,6 +107,7 @@ sudo evtest
 **Solutions**:
 
 **1. Controller not paired**:
+
 ```bash
 sudo bluetoothctl
 [bluetooth]# power on
@@ -120,12 +126,14 @@ sudo systemctl enable bluetooth
 ```
 
 **3. Controller paired but disconnected**:
+
 ```bash
 bluetoothctl
 [bluetooth]# connect XX:XX:XX:XX:XX:XX
 ```
 
 **4. Kernel too old (missing PS5 support)**:
+
 ```bash
 uname -r  # Should be 5.12+
 
@@ -189,7 +197,9 @@ cat logs/telemetry_*.jsonl | jq '.channels[0:4]'
 **Solutions**:
 
 **1. Increase deadzone**:
+
 Edit `config/default.toml`:
+
 ```toml
 [controller]
 deadzone_stick = 0.10  # Increase from 0.05 to 0.10
@@ -236,6 +246,7 @@ dmesg | grep USB
 - Check module LED (should be lit)
 
 **2. Wrong device path**:
+
 ```bash
 # Find correct device
 ls -l /dev/ttyACM* /dev/ttyUSB*
@@ -246,6 +257,7 @@ port = "/dev/ttyUSB0"  # or whatever you found
 ```
 
 **3. Permission denied**:
+
 ```bash
 # Add user to dialout group
 sudo usermod -a -G dialout $USER
@@ -258,6 +270,7 @@ groups  # Should include "dialout"
 ```
 
 **4. Device node doesn't exist**:
+
 ```bash
 # Create udev rule
 sudo nano /etc/udev/rules.d/99-elrs.rules
@@ -296,7 +309,9 @@ RUST_LOG=debug ./fpv-bridge 2>&1 | grep -i error
 **Solutions**:
 
 **1. Wrong baud rate**:
+
 Verify config:
+
 ```toml
 [serial]
 baud_rate = 420000  # Must be exactly this for CRSF
@@ -372,8 +387,10 @@ RUST_LOG=debug ./fpv-bridge 2>&1 | grep -i channel
 **Solutions**:
 
 **1. FC not configured for CRSF**:
+
 In Betaflight Configurator:
-```
+
+```text
 Configuration → Receiver:
 - Receiver Type: Serial-based receiver
 - Serial Receiver Provider: CRSF
@@ -391,6 +408,7 @@ Save and reboot FC.
 ```
 
 If reversed, edit config:
+
 ```toml
 [channels]
 channel_reverse = [1, 2]  # Example: reverse roll and pitch
@@ -437,7 +455,9 @@ cat logs/telemetry_*.jsonl | jq '.rssi, .link_quality'
 - Replace damaged antennas
 
 **4. Wrong packet rate**:
+
 Edit config:
+
 ```toml
 [crsf]
 packet_rate_hz = 150  # Lower rate = longer range
@@ -468,6 +488,7 @@ RUST_LOG=trace ./fpv-bridge 2>&1 | grep -i latency
 **Solutions**:
 
 **1. CPU throttling**:
+
 ```bash
 # Check temperature
 vcgencmd measure_temp
@@ -490,6 +511,7 @@ ps aux --sort=-%cpu | head -10
 ```
 
 **3. Debug build instead of release**:
+
 ```bash
 # Use release build
 cargo build --release
@@ -500,6 +522,7 @@ cargo build --release
 - Move controller closer to Pi
 - Reduce Bluetooth interference
 - Use higher packet rate:
+
   ```toml
   [crsf]
   packet_rate_hz = 250  # or 500 if supported
@@ -537,6 +560,7 @@ dmesg | tail -50
 **3. System overload**:
 - Close other applications
 - Reduce telemetry logging frequency:
+
   ```toml
   [telemetry]
   log_interval_ms = 200  # Reduce from 100
@@ -554,17 +578,20 @@ dmesg | tail -50
 **Solutions**:
 
 **1. Create default config**:
+
 ```bash
 mkdir -p config
 cp docs/examples/default.toml config/
 ```
 
 **2. Specify config path**:
+
 ```bash
 ./fpv-bridge --config /path/to/config.toml
 ```
 
 **3. Use system config**:
+
 ```bash
 sudo mkdir -p /etc/fpv-bridge
 sudo cp config/default.toml /etc/fpv-bridge/
@@ -591,13 +618,17 @@ sudo cp config/default.toml /etc/fpv-bridge/
 - Validate with TOML linter: https://www.toml-lint.com/
 
 **2. Invalid value range**:
-```
+
+```text
 Error: deadzone_stick must be between 0.0 and 0.25, got 0.5
 ```
+
 Fix: Correct the value in config file.
 
 **3. Missing required field**:
+
 Add missing field with default value:
+
 ```toml
 [serial]
 port = "/dev/ttyACM0"  # This field is required
@@ -659,6 +690,7 @@ echo "=== End Diagnostics ==="
 ```
 
 **Usage**:
+
 ```bash
 bash collect_diagnostics.sh > diagnostics.txt
 ```
@@ -668,6 +700,7 @@ bash collect_diagnostics.sh > diagnostics.txt
 ### Enable Verbose Logging
 
 Create `config/debug.toml`:
+
 ```toml
 # Same as default.toml but with debug settings
 
@@ -686,6 +719,7 @@ log_interval_ms = 50  # More frequent logging
 ```
 
 Run with debug logging:
+
 ```bash
 RUST_LOG=debug ./fpv-bridge --config config/debug.toml 2>&1 | tee debug.log
 ```

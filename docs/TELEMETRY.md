@@ -38,12 +38,13 @@ FPV Bridge logs telemetry data received from the drone via ExpressLRS in real-ti
 
 ### File Naming
 
-```
+```text
 telemetry_YYYYMMDD_HHMMSS.jsonl
 ```
 
 **Examples**:
-```
+
+```text
 telemetry_20251109_143045.jsonl
 telemetry_20251109_150312.jsonl
 ```
@@ -53,6 +54,7 @@ telemetry_20251109_150312.jsonl
 **Default**: `./logs/` (relative to executable)
 
 **Configurable** in `config/default.toml`:
+
 ```toml
 [telemetry]
 log_dir = "./logs"  # Change to your preferred path
@@ -278,7 +280,8 @@ Each line is a complete JSON object (no commas between lines):
 ```
 
 **Interpretation**:
-```
+
+```text
 Index  Channel  Typical Function   Example Value
   0      CH1    Roll                1520 (slight right)
   1      CH2    Pitch               1480 (slight back)
@@ -312,7 +315,7 @@ max_records_per_file = 10000  # Rotate after 10,000 records
 
 ### Rotation Process
 
-```
+```text
 1. Current file reaches max_records_per_file
    └─> telemetry_20251109_143045.jsonl (10,000 records)
 
@@ -338,7 +341,8 @@ max_files_to_keep = 10  # Keep only last 10 files
 ```
 
 **Example Directory**:
-```
+
+```text
 logs/
 ├── telemetry_20251109_143045.jsonl  (10,000 records, 16 min)
 ├── telemetry_20251109_145712.jsonl  (10,000 records, 16 min)
@@ -353,13 +357,15 @@ Oldest files automatically deleted
 ### Disk Space Management
 
 **Estimated File Sizes**:
-```
+
+```text
 Average log entry: ~150 bytes (compact JSON)
 10,000 records × 150 bytes = ~1.5 MB per file
 10 files × 1.5 MB = ~15 MB total
 ```
 
 **Calculation**:
+
 ```python
 records_per_file = 10000
 files_to_keep = 10

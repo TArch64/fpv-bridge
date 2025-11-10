@@ -49,7 +49,7 @@ This guide provides step-by-step instructions for setting up the hardware compon
 
 ### Step 1: Install Raspberry Pi OS
 
-**Using Raspberry Pi Imager (Recommended):**
+**Using Raspberry Pi Imager (Recommended)**:
 
 1. Download [Raspberry Pi Imager](https://www.raspberrypi.com/software/)
 2. Insert microSD card into your computer
@@ -166,7 +166,8 @@ lsusb
 ```
 
 **Expected output** (look for Silicon Labs CP210x or similar):
-```
+
+```text
 Bus 001 Device 003: ID 10c4:ea60 Silicon Labs CP210x UART Bridge
 ```
 
@@ -176,13 +177,14 @@ ls -l /dev/ttyACM* /dev/ttyUSB*
 ```
 
 **Expected output**:
-```
+
+```text
 crw-rw---- 1 root dialout 166, 0 Nov  9 14:30 /dev/ttyACM0
 ```
 
 or
 
-```
+```text
 crw-rw---- 1 root dialout 188, 0 Nov  9 14:30 /dev/ttyUSB0
 ```
 
@@ -212,11 +214,13 @@ sudo nano /etc/udev/rules.d/99-elrs.rules
 ```
 
 Add this line:
-```
+
+```text
 SUBSYSTEM=="tty", ATTRS{idVendor}=="10c4", ATTRS{idProduct}=="ea60", MODE="0666", SYMLINK+="elrs_tx"
 ```
 
 Save and reload udev rules:
+
 ```bash
 sudo udevadm control --reload-rules
 sudo udevadm trigger
@@ -248,7 +252,7 @@ sudo bluetoothctl
 
 You'll enter the `bluetoothctl` interactive shell:
 
-```
+```text
 [bluetooth]# power on
 [bluetooth]# agent on
 [bluetooth]# default-agent
@@ -265,7 +269,7 @@ On the PS5 controller:
 
 Back in `bluetoothctl`:
 
-```
+```text
 # You should see the controller appear (MAC address like XX:XX:XX:XX:XX:XX)
 [bluetooth]# pair XX:XX:XX:XX:XX:XX
 [bluetooth]# trust XX:XX:XX:XX:XX:XX
@@ -288,12 +292,14 @@ ls -l /dev/input/event*
 ```
 
 **Expected output** (multiple event devices):
-```
+
+```text
 crw-rw---- 1 root input 13, 64 Nov  9 14:35 /dev/input/event0
 crw-rw---- 1 root input 13, 65 Nov  9 14:35 /dev/input/event1
 ```
 
 Find the PS5 controller:
+
 ```bash
 # Install evtest
 sudo apt-get install -y evtest
@@ -314,6 +320,7 @@ sudo nano /etc/bluetooth/main.conf
 ```
 
 Ensure these lines are set:
+
 ```ini
 [Policy]
 AutoEnable=true
@@ -322,6 +329,7 @@ ReconnectIntervals=1,2,4,8,16,32,64
 ```
 
 Save and restart Bluetooth:
+
 ```bash
 sudo systemctl restart bluetooth
 ```
@@ -408,7 +416,8 @@ Typical power draw:
 5. Label ports and LED indicators
 
 **Example layout**:
-```
+
+```text
 ┌─────────────────────────────┐
 │     Portable FPV Bridge     │
 │                             │
@@ -444,7 +453,8 @@ Typical power draw:
 3. **Case**: Ventilated case with airflow
 
 **GPIO Fan Connection** (optional):
-```
+
+```text
 Pi GPIO:
 Pin 4 (5V)  ────→ Fan Red Wire
 Pin 6 (GND) ────→ Fan Black Wire
@@ -513,6 +523,7 @@ htop
 **Symptoms**: No green LED activity, no network connection
 
 **Solutions**:
+
 1. Check power supply (minimum 2A)
 2. Re-flash SD card with Raspberry Pi Imager
 3. Try a different microSD card
@@ -523,6 +534,7 @@ htop
 **Symptoms**: `lsusb` doesn't show module, no `/dev/ttyACM0`
 
 **Solutions**:
+
 ```bash
 # 1. Check USB connection
 lsusb
@@ -543,6 +555,7 @@ sudo modprobe cp210x
 **Symptoms**: Controller not visible in Bluetooth scan
 
 **Solutions**:
+
 1. **Reset controller**:
    - Insert paperclip in small hole on back near L2 button
    - Hold for 5 seconds
@@ -570,6 +583,7 @@ sudo modprobe cp210x
 **Symptoms**: `Permission denied` when accessing serial port
 
 **Solutions**:
+
 ```bash
 # 1. Add user to dialout group
 sudo usermod -a -G dialout $USER
@@ -592,6 +606,7 @@ ls -l /dev/ttyACM0
 **Symptoms**: Controller paired but no input events
 
 **Solutions**:
+
 ```bash
 # 1. Check input devices
 ls /dev/input/event*
@@ -614,6 +629,7 @@ sudo apt-get dist-upgrade
 **Symptoms**: Pi throttling, slow performance
 
 **Solutions**:
+
 ```bash
 # 1. Check temperature
 vcgencmd measure_temp
@@ -645,7 +661,7 @@ Once hardware setup is complete:
 
 ### Raspberry Pi Zero 2 W GPIO (Reference)
 
-```
+```text
      3V3  (1) (2)  5V
    GPIO2  (3) (4)  5V
    GPIO3  (5) (6)  GND
@@ -669,6 +685,7 @@ Once hardware setup is complete:
 ```
 
 **Ports**:
+
 - **PWR**: Micro-USB (power input only)
 - **USB**: Micro-USB OTG (data + power)
 - **HDMI**: Mini HDMI (video output)

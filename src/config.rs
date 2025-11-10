@@ -3,6 +3,7 @@
 //! Handles loading and validating configuration from TOML files.
 
 use serde::Deserialize;
+use serde::de::Error;
 use std::fs;
 use std::path::Path;
 

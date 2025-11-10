@@ -9,11 +9,7 @@ use thiserror::Error;
 pub enum FpvBridgeError {
     /// Serial port errors
     #[error("Serial port error: {0}")]
-    Serial(#[from] serialport::Error),
-
-    /// Tokio serial errors
-    #[error("Tokio serial error: {0}")]
-    TokioSerial(#[from] tokio_serial::Error),
+    Serial(#[from] tokio_serial::Error),
 
     /// Controller not found
     #[error("Controller not found: {0}")]

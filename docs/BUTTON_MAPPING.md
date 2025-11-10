@@ -19,7 +19,7 @@ This document describes the PS5 DualSense controller button mappings and how the
 
 ### PS5 DualSense Visual Guide
 
-```
+```text
                     ┌─────────────────────────────────┐
                     │         TOUCHPAD (Click)        │
                     │      (Calibrate Sticks)         │
@@ -68,7 +68,7 @@ These are the main controls for flying your drone:
 
 ### Stick Positions (Standard Mode 2)
 
-```
+```text
     LEFT STICK                  RIGHT STICK
 
     Throttle Up                 Pitch Forward
@@ -97,6 +97,7 @@ Yaw Left ◄─┼─► Yaw Right   Roll Left ◄─┼─► Roll Right
 - Throttle: 0.0 (linear)
 
 **To Recalibrate**:
+
 1. Press Touchpad (click)
 2. Center all sticks
 3. Release touchpad
@@ -297,7 +298,7 @@ self.prev_button_square = state.button_square;
 
 ### Arming Procedure
 
-```
+```text
 1. Throttle stick to minimum (all the way down)
    └─> Verify: CH3 < 1050μs
 
@@ -313,7 +314,7 @@ self.prev_button_square = state.button_square;
 
 ### Disarming Procedure
 
-```
+```text
 1. Land drone gently (throttle to minimum)
 
 2. Reduce throttle to idle

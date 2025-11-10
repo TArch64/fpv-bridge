@@ -44,7 +44,7 @@ This document describes the Crossfire (CRSF) protocol used by ExpressLRS and imp
 
 All CRSF frames follow this structure:
 
-```
+```text
 ┌──────────┬──────────┬──────────┬─────────────────┬──────────┐
 │   SYNC   │  LENGTH  │   TYPE   │     PAYLOAD     │   CRC8   │
 │  (0xC8)  │  (N+2)   │  (0xXX)  │   (N bytes)     │          │
@@ -91,7 +91,7 @@ Transmits 16 RC channel values from controller to flight controller.
 
 ### Frame Structure
 
-```
+```text
 Total: 26 bytes
 
 ┌──────┬──────┬──────┬────────────────────────────┬──────┐
@@ -115,7 +115,7 @@ Each channel is **11 bits** (0-2047), representing 988-2012μs:
 
 Channels are packed as a continuous bitstream, LSB first:
 
-```
+```text
 Byte 0: Ch1[0:7]
 Byte 1: Ch1[8:10] | Ch2[0:4]
 Byte 2: Ch2[5:10] | Ch3[0:1]
@@ -172,7 +172,7 @@ fn encode_rc_channels(channels: &[u16; 16]) -> Vec<u8> {
 
 **Payload Structure** (10 bytes):
 
-```
+```text
 Offset | Size | Field            | Unit/Range
 -------|------|------------------|------------------
    0   |  1   | Uplink RSSI 1    | dBm (0-255, 0xFF = invalid)
@@ -223,7 +223,8 @@ Offset | Size | Field            | Unit
 ```
 
 **Example**:
-```
+
+```text
 Voltage: 0x0419 = 1049 cV = 10.49V
 Current: 0x007D = 125 dA = 12.5A
 Capacity: 0x0003E8 = 1000 mAh
@@ -246,7 +247,8 @@ Offset | Size | Field            | Unit
 ```
 
 **Example**:
-```
+
+```text
 Latitude: 0x164F7B88 = 375432072 → 37.5432072° N
 Longitude: 0xF8B72F00 = -122419200 → -122.4192° W
 Altitude: 0x046C = 1132 → 132m (subtract 1000)
@@ -308,7 +310,8 @@ fn crc8_dvb_s2_fast(data: &[u8]) -> u8 {
 ### Verification
 
 Test vector:
-```
+
+```text
 Input:  [0x18, 0x16, 0x00, 0x04, 0x00, ...(22 bytes)...]
 CRC8:   0x?? (calculated)
 ```
@@ -331,7 +334,8 @@ CRC8:   0x?? (calculated)
 - Standard for CRSF/ELRS
 
 **Serial Settings**:
-```
+
+```text
 Baud Rate: 420,000
 Data Bits: 8
 Parity:    None
@@ -423,14 +427,16 @@ CH1-16: 1024 (0x400)
 ```
 
 **Encoded Payload** (22 bytes):
-```
+
+```text
 0x00 0x04 0x00 0x04 0x00 0x04 0x00 0x04
 0x00 0x04 0x00 0x04 0x00 0x04 0x00 0x04
 0x00 0x04 0x00 0x04 0x00 0x04
 ```
 
 **Full Frame**:
-```
+
+```text
 Sync:    0xC8
 Length:  0x18 (24)
 Type:    0x16
@@ -442,7 +448,7 @@ Complete: C8 18 16 00 04 00 04 00 04 00 04 00 04 00 04 00 04 00 04 00 04 00 04 0
 
 ### Example 2: RC Channels with ARM
 
-```
+```text
 CH1 (Roll):     1500μs → 1024 (0x400)
 CH2 (Pitch):    1500μs → 1024 (0x400)
 CH3 (Throttle): 1000μs → 0    (0x000)
@@ -452,7 +458,8 @@ CH6-16:         1500μs → 1024 (0x400)
 ```
 
 **Bit Packing**:
-```
+
+```text
 CH1: 00000000100 (0x400)
 CH2: 00000000100 (0x400)
 CH3: 00000000000 (0x000)
@@ -464,12 +471,14 @@ CH5: 11111111111 (0x7FF)
 ### Example 3: Link Statistics Packet
 
 **Received Bytes**:
-```
+
+```text
 C8 0C 14 5A 5A 64 0A 00 02 32 5C 62 08 [CRC]
 ```
 
 **Decoding**:
-```
+
+```text
 Sync:    0xC8
 Length:  0x0C (12 bytes)
 Type:    0x14 (Link Stats)
