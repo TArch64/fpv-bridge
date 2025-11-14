@@ -6,7 +6,8 @@
 //! for controlling ExpressLRS-enabled drones.
 
 use anyhow::Result;
-use tracing::info;
+use tokio::time::{interval, Duration};
+use tracing::{debug, info};
 use tracing_subscriber;
 
 mod config;
@@ -39,25 +40,52 @@ async fn main() -> Result<()> {
     let mut serial = ElrsSerial::open()?;
     info!("ELRS serial port opened at: {}", serial.device_path());
 
-    // Send a test packet with all channels centered
-    info!("Sending test CRSF packet (all channels centered at 1024)...");
-    let test_channels = [CRSF_CHANNEL_VALUE_CENTER; 16];
-    let test_packet = encode_rc_channels_frame(&test_channels);
+    // Create dummy channel values (all centered)
+    // In the next phase, these will be replaced with actual controller input
+    let dummy_channels = [CRSF_CHANNEL_VALUE_CENTER; 16];
 
-    serial.send_packet(&test_packet).await?;
-    info!("Test packet sent successfully!");
+    // Create 250Hz interval (4ms period)
+    let packet_rate_hz = 250;
+    let period_ms = 1000 / packet_rate_hz;
+    let mut packet_interval = interval(Duration::from_millis(period_ms));
 
-    // TODO: Initialize telemetry logger
-    // TODO: Spawn async tasks
-    // TODO: Wait for shutdown signal
-
-    info!("FPV Bridge initialized successfully");
+    info!("Starting CRSF packet transmission loop at {}Hz", packet_rate_hz);
     info!("Press Ctrl+C to exit");
 
-    // Wait for Ctrl+C
-    tokio::signal::ctrl_c().await?;
+    let mut packet_count: u64 = 0;
+    let mut last_log_count: u64 = 0;
 
-    info!("Shutting down...");
+    // Main control loop
+    loop {
+        tokio::select! {
+            // Send packet at regular interval
+            _ = packet_interval.tick() => {
+                // Encode and send CRSF packet with dummy values
+                let packet = encode_rc_channels_frame(&dummy_channels);
+
+                if let Err(e) = serial.send_packet(&packet).await {
+                    debug!("Failed to send packet: {}", e);
+                    continue;
+                }
+
+                packet_count += 1;
+
+                // Log status every 1000 packets (~4 seconds at 250Hz)
+                if packet_count - last_log_count >= 1000 {
+                    info!("Sent {} packets ({}Hz, all channels centered at {})",
+                        packet_count, packet_rate_hz, CRSF_CHANNEL_VALUE_CENTER);
+                    last_log_count = packet_count;
+                }
+            }
+
+            // Handle Ctrl+C for graceful shutdown
+            _ = tokio::signal::ctrl_c() => {
+                info!("Received Ctrl+C, shutting down...");
+                info!("Total packets sent: {}", packet_count);
+                break;
+            }
+        }
+    }
 
     Ok(())
 }
