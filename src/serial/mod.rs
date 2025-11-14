@@ -163,7 +163,24 @@ impl ElrsSerial {
         Ok(())
     }
 
-    /// Get the device path
+    /// Get the device path of the opened serial port
+    ///
+    /// Returns the path to the serial device that was successfully opened
+    /// (e.g., "/dev/ttyACM0" or "/dev/ttyUSB0").
+    ///
+    /// # Returns
+    ///
+    /// * `&str` - Reference to the device path string
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use fpv_bridge::serial::ElrsSerial;
+    ///
+    /// let serial = ElrsSerial::open()?;
+    /// println!("Connected to: {}", serial.device_path());
+    /// # Ok::<(), Box<dyn std::error::Error>>(())
+    /// ```
     pub fn device_path(&self) -> &str {
         &self.device_path
     }
