@@ -22,12 +22,24 @@ use crsf::protocol::CRSF_CHANNEL_VALUE_CENTER;
 use serial::ElrsSerial;
 
 /// Default packet transmission rate in Hz (ELRS standard)
+///
+/// ExpressLRS uses 250Hz packet rate for control commands, resulting in
+/// a 4ms period between packets. This ensures responsive control with
+/// low latency suitable for FPV drone racing and freestyle.
 const PACKET_RATE_HZ: u32 = 250;
 
 /// Number of packets between status log messages
+///
+/// At 250Hz, logging every 1000 packets results in status updates
+/// approximately every 4 seconds, providing visibility without
+/// flooding the logs.
 const LOG_INTERVAL_PACKETS: u64 = 1000;
 
 /// Consecutive failure threshold before escalating to warning level
+///
+/// When packet transmission fails 10 times consecutively, logging
+/// escalates from debug to warning level to alert of persistent
+/// connectivity issues that may require intervention.
 const FAILURE_WARNING_THRESHOLD: u32 = 10;
 
 /// Main entry point for FPV Bridge application
