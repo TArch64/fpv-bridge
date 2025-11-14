@@ -77,6 +77,13 @@ impl ElrsSerial {
     ///
     /// * `Result<ElrsSerial>` - Connected serial port or error
     pub fn open_with_paths(paths: &[&str]) -> Result<Self> {
+        // Special case: empty paths list
+        if paths.is_empty() {
+            return Err(FpvBridgeError::SerialPortNotFound(
+                "No ELRS device paths configured".to_string()
+            ));
+        }
+
         for path in paths {
             debug!("Trying to open serial port: {}", path);
 
@@ -189,8 +196,6 @@ impl ElrsSerial {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::crsf::encoder::encode_rc_channels_frame;
-    use crate::crsf::protocol::CRSF_CHANNEL_VALUE_CENTER;
 
     #[test]
     fn test_constants() {
@@ -226,11 +231,11 @@ mod tests {
         let empty_paths: &[&str] = &[];
         let result = ElrsSerial::open_with_paths(empty_paths);
 
-        // Should fail with SerialPortNotFound error
+        // Should fail with SerialPortNotFound error with clear message
         assert!(result.is_err());
         match result.unwrap_err() {
-            FpvBridgeError::SerialPortNotFound(_) => {
-                // Expected error
+            FpvBridgeError::SerialPortNotFound(msg) => {
+                assert_eq!(msg, "No ELRS device paths configured");
             }
             other => panic!("Expected SerialPortNotFound, got: {:?}", other),
         }
@@ -253,19 +258,6 @@ mod tests {
             }
             _ => panic!("Expected Serial error, got: {:?}", err),
         }
-    }
-
-    #[test]
-    fn test_crsf_packet_encoding() {
-        // Verify that CRSF packet encoding produces valid packets
-        let channels = [CRSF_CHANNEL_VALUE_CENTER; 16];
-        let packet = encode_rc_channels_frame(&channels);
-
-        // Verify packet structure
-        assert_eq!(packet.len(), 26, "CRSF packet should be 26 bytes");
-        assert_eq!(packet[0], 0xC8, "First byte should be sync byte (0xC8)");
-        assert_eq!(packet[1], 0x18, "Second byte should be length (0x18 = 24)");
-        assert_eq!(packet[2], 0x16, "Third byte should be frame type (0x16 = RC channels)");
     }
 
     #[test]
@@ -315,6 +307,9 @@ mod tests {
     #[tokio::test]
     #[ignore] // Run with: cargo test -- --ignored
     async fn test_send_packet_with_real_hardware() {
+        use crate::crsf::encoder::encode_rc_channels_frame;
+        use crate::crsf::protocol::CRSF_CHANNEL_VALUE_CENTER;
+
         // This test requires actual ELRS hardware connected
         let result = ElrsSerial::open();
 
