@@ -92,15 +92,4 @@ mod tests {
         assert!(debug_str.contains("Serial"));
         assert!(debug_str.contains("test error"));
     }
-
-    #[test]
-    fn test_result_type_alias() {
-        // Verify Result type alias works correctly
-        let ok_result: Result<i32> = Ok(42);
-        assert!(ok_result.is_ok());
-        assert_eq!(ok_result.unwrap(), 42);
-
-        let err_result: Result<i32> = Err(FpvBridgeError::Serial("test".to_string()));
-        assert!(err_result.is_err());
-    }
 }

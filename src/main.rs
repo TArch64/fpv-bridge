@@ -7,7 +7,7 @@
 
 use anyhow::Result;
 use tokio::time::{interval, Duration};
-use tracing::{debug, info};
+use tracing::{debug, info, warn};
 use tracing_subscriber;
 
 mod config;
@@ -27,61 +27,24 @@ const PACKET_RATE_HZ: u32 = 250;
 /// Number of packets between status log messages
 const LOG_INTERVAL_PACKETS: u64 = 1000;
 
+/// Consecutive failure threshold before escalating to warning level
+const FAILURE_WARNING_THRESHOLD: u32 = 10;
+
 /// Main entry point for FPV Bridge application
 ///
-/// Initializes the application and runs the main control loop that continuously
-/// sends CRSF packets to the ELRS transmitter module at 250Hz.
+/// Initializes serial communication with ELRS module and runs the main control loop
+/// that continuously sends CRSF packets at 250Hz (ELRS standard rate).
 ///
-/// # Control Flow
+/// # Current Implementation (Phase 2)
 ///
-/// 1. **Initialization**
-///    - Set up logging with tracing subscriber
-///    - Open serial connection to ELRS module
-///    - Configure 250Hz packet transmission interval
-///
-/// 2. **Main Loop**
-///    - Send CRSF packets at 250Hz with dummy channel values (all centered)
-///    - Log status every 1000 packets (~4 seconds)
-///    - Handle Ctrl+C for graceful shutdown
-///
-/// 3. **Graceful Shutdown**
-///    - Stop packet transmission
-///    - Log total packet count
-///    - Clean exit
-///
-/// # Current Behavior
-///
-/// In this phase, all 16 RC channels are set to center position (1024).
-/// This provides a continuous, valid CRSF packet stream to the ELRS module
-/// without requiring controller input. The drone will receive neutral
-/// stick positions.
-///
-/// # Future Phases
-///
-/// - Phase 3: Replace dummy values with PS5 controller input
-/// - Phase 4: Add telemetry reception
-/// - Phase 5: Implement safety features and failsafe
+/// - Sends dummy channel values (all centered at 1024) at 250Hz
+/// - Logs status every 1000 packets (~4 seconds)
+/// - Handles Ctrl+C for graceful shutdown
+/// - Tracks consecutive transmission failures with warning escalation
 ///
 /// # Errors
 ///
-/// Returns error if:
-/// - Serial port cannot be opened (no ELRS device found)
-/// - Critical transmission failures occur
-///
-/// # Examples
-///
-/// Run the application:
-/// ```bash
-/// cargo run --release
-/// ```
-///
-/// Expected output:
-/// ```text
-/// INFO fpv_bridge: FPV Bridge v0.1.0 starting...
-/// INFO fpv_bridge::serial: Successfully opened ELRS device at /dev/ttyACM0
-/// INFO fpv_bridge: Starting CRSF packet transmission loop at 250Hz
-/// INFO fpv_bridge: Sent 1000 packets (250Hz, all channels centered at 1024)
-/// ```
+/// Returns error if serial port cannot be opened (no ELRS device found)
 #[tokio::main]
 async fn main() -> Result<()> {
     // Initialize logging
@@ -108,12 +71,15 @@ async fn main() -> Result<()> {
     // Create 250Hz interval (4ms period)
     let period_ms = 1000 / PACKET_RATE_HZ;
     let mut packet_interval = interval(Duration::from_millis(period_ms as u64));
+    // Skip missed ticks to prevent burst sends after delays
+    packet_interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
 
     info!("Starting CRSF packet transmission loop at {}Hz", PACKET_RATE_HZ);
     info!("Press Ctrl+C to exit");
 
     let mut packet_count: u64 = 0;
     let mut last_log_count: u64 = 0;
+    let mut consecutive_failures: u32 = 0;
 
     // Main control loop
     loop {
@@ -124,10 +90,18 @@ async fn main() -> Result<()> {
                 let packet = encode_rc_channels_frame(&dummy_channels);
 
                 if let Err(e) = serial.send_packet(&packet).await {
-                    debug!("Failed to send packet: {}", e);
+                    consecutive_failures += 1;
+
+                    if consecutive_failures >= FAILURE_WARNING_THRESHOLD {
+                        warn!("Failed to send packet (consecutive failures: {}): {}", consecutive_failures, e);
+                    } else {
+                        debug!("Failed to send packet: {}", e);
+                    }
                     continue;
                 }
 
+                // Reset failure counter on successful transmission
+                consecutive_failures = 0;
                 packet_count += 1;
 
                 // Log status every LOG_INTERVAL_PACKETS (~4 seconds at 250Hz)
@@ -183,7 +157,7 @@ mod tests {
         let dummy_channels = [CRSF_CHANNEL_VALUE_CENTER; 16];
         assert_eq!(dummy_channels.len(), 16, "Should have 16 channels");
         for &channel in &dummy_channels {
-            assert_eq!(channel, 1024, "All channels should be centered at 1024");
+            assert_eq!(channel, CRSF_CHANNEL_VALUE_CENTER, "All channels should be centered");
         }
     }
 }

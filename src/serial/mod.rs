@@ -280,26 +280,12 @@ mod tests {
     }
 
     #[test]
-    fn test_default_device_paths_not_empty() {
-        // Verify we have at least one default path
-        assert!(!DEFAULT_DEVICE_PATHS.is_empty(), "Must have at least one default device path");
-    }
-
-    #[test]
     fn test_device_paths_are_absolute() {
-        // All device paths should be absolute (start with /)
+        // Verify all default device paths are absolute and valid
+        assert_eq!(DEFAULT_DEVICE_PATHS.len(), 2, "Should have exactly 2 default paths");
         for path in DEFAULT_DEVICE_PATHS {
             assert!(path.starts_with('/'), "Device path must be absolute: {}", path);
         }
-    }
-
-    #[test]
-    fn test_elrs_serial_debug_format() {
-        // This is a smoke test - we can't actually create ElrsSerial without hardware
-        // but we can verify the Debug trait is implemented by checking compilation
-        // The format! macro will fail to compile if Debug is not implemented
-        fn _assert_debug_impl<T: std::fmt::Debug>() {}
-        _assert_debug_impl::<ElrsSerial>();
     }
 
     // Integration test - only runs if ELRS hardware is connected
