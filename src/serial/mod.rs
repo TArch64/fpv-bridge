@@ -32,6 +32,14 @@ pub struct ElrsSerial {
     device_path: String,
 }
 
+impl std::fmt::Debug for ElrsSerial {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ElrsSerial")
+            .field("device_path", &self.device_path)
+            .finish_non_exhaustive()
+    }
+}
+
 impl ElrsSerial {
     /// Open connection to ELRS module
     ///
@@ -165,11 +173,146 @@ impl ElrsSerial {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::crsf::encoder::encode_rc_channels_frame;
+    use crate::crsf::protocol::CRSF_CHANNEL_VALUE_CENTER;
 
     #[test]
     fn test_constants() {
         assert_eq!(CRSF_BAUD_RATE, 420_000);
         assert_eq!(DEFAULT_DEVICE_PATHS.len(), 2);
         assert_eq!(DEFAULT_DEVICE_PATHS[0], "/dev/ttyACM0");
+        assert_eq!(DEFAULT_DEVICE_PATHS[1], "/dev/ttyUSB0");
+    }
+
+    #[tokio::test]
+    async fn test_open_with_invalid_paths_returns_error() {
+        // Try to open non-existent device paths
+        let invalid_paths = &["/dev/nonexistent0", "/dev/nonexistent1"];
+        let result = ElrsSerial::open_with_paths(invalid_paths).await;
+
+        // Should fail with SerialPortNotFound error
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+
+        // Verify error message contains the paths we tried
+        match err {
+            FpvBridgeError::SerialPortNotFound(msg) => {
+                assert!(msg.contains("/dev/nonexistent0"));
+                assert!(msg.contains("/dev/nonexistent1"));
+            }
+            _ => panic!("Expected SerialPortNotFound error, got: {:?}", err),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_open_with_empty_paths_returns_error() {
+        // Try to open with empty path list
+        let empty_paths: &[&str] = &[];
+        let result = ElrsSerial::open_with_paths(empty_paths).await;
+
+        // Should fail with SerialPortNotFound error
+        assert!(result.is_err());
+        match result.unwrap_err() {
+            FpvBridgeError::SerialPortNotFound(_) => {
+                // Expected error
+            }
+            other => panic!("Expected SerialPortNotFound, got: {:?}", other),
+        }
+    }
+
+    #[test]
+    fn test_open_port_with_invalid_path_returns_error() {
+        // Try to open a non-existent device
+        let result = ElrsSerial::open_port("/dev/nonexistent_serial_device_12345");
+
+        // Should fail with Serial error
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+
+        match err {
+            FpvBridgeError::Serial(msg) => {
+                // Error message should mention the path and failure
+                assert!(msg.contains("/dev/nonexistent_serial_device_12345"));
+                assert!(msg.contains("Failed to open"));
+            }
+            _ => panic!("Expected Serial error, got: {:?}", err),
+        }
+    }
+
+    #[test]
+    fn test_crsf_packet_encoding() {
+        // Verify that CRSF packet encoding produces valid packets
+        let channels = [CRSF_CHANNEL_VALUE_CENTER; 16];
+        let packet = encode_rc_channels_frame(&channels);
+
+        // Verify packet structure
+        assert_eq!(packet.len(), 26, "CRSF packet should be 26 bytes");
+        assert_eq!(packet[0], 0xC8, "First byte should be sync byte (0xC8)");
+        assert_eq!(packet[1], 0x18, "Second byte should be length (0x18 = 24)");
+        assert_eq!(packet[2], 0x16, "Third byte should be frame type (0x16 = RC channels)");
+    }
+
+    #[test]
+    fn test_device_path_order() {
+        // Verify that device paths are tried in the correct priority order
+        assert_eq!(DEFAULT_DEVICE_PATHS[0], "/dev/ttyACM0",
+            "ttyACM0 should be tried first (most common for ELRS)");
+        assert_eq!(DEFAULT_DEVICE_PATHS[1], "/dev/ttyUSB0",
+            "ttyUSB0 should be tried second (USB-to-serial adapters)");
+    }
+
+    #[test]
+    fn test_serial_configuration_constants() {
+        // Verify CRSF protocol requirements
+        assert_eq!(CRSF_BAUD_RATE, 420_000, "CRSF requires 420,000 baud");
+
+        // These are the expected serial settings for CRSF
+        // 8 data bits, no parity, 1 stop bit (8N1)
+        // Tested indirectly through open_port configuration
+    }
+
+    // Integration test - only runs if ELRS hardware is connected
+    // Skipped in CI/CD environments
+    #[tokio::test]
+    #[ignore] // Run with: cargo test -- --ignored
+    async fn test_open_with_real_hardware() {
+        // This test requires actual ELRS hardware connected
+        let result = ElrsSerial::open().await;
+
+        if result.is_ok() {
+            let serial = result.unwrap();
+            println!("Successfully opened ELRS device at: {}", serial.device_path());
+
+            // Verify device path is one of the expected ones
+            let path = serial.device_path();
+            assert!(
+                path == "/dev/ttyACM0" || path == "/dev/ttyUSB0",
+                "Unexpected device path: {}",
+                path
+            );
+        } else {
+            println!("No ELRS hardware detected (this is OK for CI/CD)");
+        }
+    }
+
+    // Integration test - only runs if ELRS hardware is connected
+    #[tokio::test]
+    #[ignore] // Run with: cargo test -- --ignored
+    async fn test_send_packet_with_real_hardware() {
+        // This test requires actual ELRS hardware connected
+        let result = ElrsSerial::open().await;
+
+        if let Ok(mut serial) = result {
+            // Send a test packet
+            let channels = [CRSF_CHANNEL_VALUE_CENTER; 16];
+            let packet = encode_rc_channels_frame(&channels);
+
+            let send_result = serial.send_packet(&packet).await;
+            assert!(send_result.is_ok(), "Failed to send packet: {:?}", send_result);
+
+            println!("Successfully sent test packet to ELRS device");
+        } else {
+            println!("No ELRS hardware detected (skipping send test)");
+        }
     }
 }
