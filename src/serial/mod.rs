@@ -280,11 +280,27 @@ mod tests {
     }
 
     #[test]
-    fn test_device_paths_are_absolute() {
-        // Verify all default device paths are absolute and valid
+    fn test_device_paths_are_absolute_and_valid() {
+        // Verify all default device paths are absolute and follow /dev/tty* pattern
         assert_eq!(DEFAULT_DEVICE_PATHS.len(), 2, "Should have exactly 2 default paths");
+
         for path in DEFAULT_DEVICE_PATHS {
+            // Must be absolute path
             assert!(path.starts_with('/'), "Device path must be absolute: {}", path);
+
+            // Must follow /dev/tty* pattern (standard Linux serial device naming)
+            assert!(
+                path.starts_with("/dev/tty"),
+                "Device path must follow /dev/tty* pattern: {}",
+                path
+            );
+
+            // Must have characters after /dev/tty (e.g., ACM0, USB0)
+            assert!(
+                path.len() > "/dev/tty".len(),
+                "Device path must specify device after /dev/tty: {}",
+                path
+            );
         }
     }
 

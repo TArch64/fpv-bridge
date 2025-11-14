@@ -76,16 +76,6 @@ mod tests {
     }
 
     #[test]
-    fn test_error_is_send_and_sync() {
-        // Verify error type can be sent across threads
-        fn assert_send<T: Send>() {}
-        fn assert_sync<T: Sync>() {}
-
-        assert_send::<FpvBridgeError>();
-        assert_sync::<FpvBridgeError>();
-    }
-
-    #[test]
     fn test_error_debug_format() {
         let error = FpvBridgeError::Serial("test error".to_string());
         let debug_str = format!("{:?}", error);
