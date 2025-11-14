@@ -21,6 +21,67 @@ use crsf::encoder::encode_rc_channels_frame;
 use crsf::protocol::CRSF_CHANNEL_VALUE_CENTER;
 use serial::ElrsSerial;
 
+/// Default packet transmission rate in Hz (ELRS standard)
+const PACKET_RATE_HZ: u32 = 250;
+
+/// Number of packets between status log messages
+const LOG_INTERVAL_PACKETS: u64 = 1000;
+
+/// Main entry point for FPV Bridge application
+///
+/// Initializes the application and runs the main control loop that continuously
+/// sends CRSF packets to the ELRS transmitter module at 250Hz.
+///
+/// # Control Flow
+///
+/// 1. **Initialization**
+///    - Set up logging with tracing subscriber
+///    - Open serial connection to ELRS module
+///    - Configure 250Hz packet transmission interval
+///
+/// 2. **Main Loop**
+///    - Send CRSF packets at 250Hz with dummy channel values (all centered)
+///    - Log status every 1000 packets (~4 seconds)
+///    - Handle Ctrl+C for graceful shutdown
+///
+/// 3. **Graceful Shutdown**
+///    - Stop packet transmission
+///    - Log total packet count
+///    - Clean exit
+///
+/// # Current Behavior
+///
+/// In this phase, all 16 RC channels are set to center position (1024).
+/// This provides a continuous, valid CRSF packet stream to the ELRS module
+/// without requiring controller input. The drone will receive neutral
+/// stick positions.
+///
+/// # Future Phases
+///
+/// - Phase 3: Replace dummy values with PS5 controller input
+/// - Phase 4: Add telemetry reception
+/// - Phase 5: Implement safety features and failsafe
+///
+/// # Errors
+///
+/// Returns error if:
+/// - Serial port cannot be opened (no ELRS device found)
+/// - Critical transmission failures occur
+///
+/// # Examples
+///
+/// Run the application:
+/// ```bash
+/// cargo run --release
+/// ```
+///
+/// Expected output:
+/// ```text
+/// INFO fpv_bridge: FPV Bridge v0.1.0 starting...
+/// INFO fpv_bridge::serial: Successfully opened ELRS device at /dev/ttyACM0
+/// INFO fpv_bridge: Starting CRSF packet transmission loop at 250Hz
+/// INFO fpv_bridge: Sent 1000 packets (250Hz, all channels centered at 1024)
+/// ```
 #[tokio::main]
 async fn main() -> Result<()> {
     // Initialize logging
@@ -45,11 +106,10 @@ async fn main() -> Result<()> {
     let dummy_channels = [CRSF_CHANNEL_VALUE_CENTER; 16];
 
     // Create 250Hz interval (4ms period)
-    let packet_rate_hz = 250;
-    let period_ms = 1000 / packet_rate_hz;
-    let mut packet_interval = interval(Duration::from_millis(period_ms));
+    let period_ms = 1000 / PACKET_RATE_HZ;
+    let mut packet_interval = interval(Duration::from_millis(period_ms as u64));
 
-    info!("Starting CRSF packet transmission loop at {}Hz", packet_rate_hz);
+    info!("Starting CRSF packet transmission loop at {}Hz", PACKET_RATE_HZ);
     info!("Press Ctrl+C to exit");
 
     let mut packet_count: u64 = 0;
@@ -70,10 +130,10 @@ async fn main() -> Result<()> {
 
                 packet_count += 1;
 
-                // Log status every 1000 packets (~4 seconds at 250Hz)
-                if packet_count - last_log_count >= 1000 {
+                // Log status every LOG_INTERVAL_PACKETS (~4 seconds at 250Hz)
+                if packet_count - last_log_count >= LOG_INTERVAL_PACKETS {
                     info!("Sent {} packets ({}Hz, all channels centered at {})",
-                        packet_count, packet_rate_hz, CRSF_CHANNEL_VALUE_CENTER);
+                        packet_count, PACKET_RATE_HZ, CRSF_CHANNEL_VALUE_CENTER);
                     last_log_count = packet_count;
                 }
             }
@@ -88,4 +148,42 @@ async fn main() -> Result<()> {
     }
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_packet_rate_constant() {
+        // Verify ELRS standard packet rate
+        assert_eq!(PACKET_RATE_HZ, 250, "Packet rate should be 250Hz (ELRS standard)");
+    }
+
+    #[test]
+    fn test_log_interval_constant() {
+        // Verify log interval is reasonable
+        assert_eq!(LOG_INTERVAL_PACKETS, 1000);
+
+        // At 250Hz, 1000 packets = 4 seconds
+        let seconds = LOG_INTERVAL_PACKETS as f64 / PACKET_RATE_HZ as f64;
+        assert_eq!(seconds, 4.0, "Log interval should be 4 seconds at 250Hz");
+    }
+
+    #[test]
+    fn test_packet_period_calculation() {
+        // Verify period calculation is correct
+        let period_ms = 1000 / PACKET_RATE_HZ;
+        assert_eq!(period_ms, 4, "Period should be 4ms at 250Hz");
+    }
+
+    #[test]
+    fn test_dummy_channels_are_centered() {
+        // Verify dummy values match CRSF center position
+        let dummy_channels = [CRSF_CHANNEL_VALUE_CENTER; 16];
+        assert_eq!(dummy_channels.len(), 16, "Should have 16 channels");
+        for &channel in &dummy_channels {
+            assert_eq!(channel, 1024, "All channels should be centered at 1024");
+        }
+    }
 }
