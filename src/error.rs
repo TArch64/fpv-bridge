@@ -18,6 +18,14 @@ pub enum FpvBridgeError {
     /// I/O errors
     #[error("I/O error: {0}")]
     Io(#[from] std::io::Error),
+
+    /// Serial port errors
+    #[error("Serial port error: {0}")]
+    Serial(String),
+
+    /// Serial port not found
+    #[error("No ELRS device found. Tried: {0}")]
+    SerialPortNotFound(String),
 }
 
 /// Result type alias for FPV Bridge
