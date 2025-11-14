@@ -6,7 +6,7 @@
 //! for controlling ExpressLRS-enabled drones.
 
 use anyhow::Result;
-use tracing::{info, warn};
+use tracing::info;
 use tracing_subscriber;
 
 mod config;
@@ -36,21 +36,8 @@ async fn main() -> Result<()> {
     // TODO: Initialize controller handler
 
     // Initialize serial communication
-    let mut serial = match ElrsSerial::open().await {
-        Ok(s) => {
-            info!("ELRS serial port opened at: {}", s.device_path());
-            s
-        }
-        Err(e) => {
-            warn!("Failed to open ELRS device: {}", e);
-            warn!("Make sure your ELRS module is connected via USB");
-            warn!("This is a test build - continuing without serial port");
-
-            // Wait for Ctrl+C and exit
-            tokio::signal::ctrl_c().await?;
-            return Ok(());
-        }
-    };
+    let mut serial = ElrsSerial::open()?;
+    info!("ELRS serial port opened at: {}", serial.device_path());
 
     // Send a test packet with all channels centered
     info!("Sending test CRSF packet (all channels centered at 1024)...");

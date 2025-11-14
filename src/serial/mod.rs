@@ -58,14 +58,13 @@ impl ElrsSerial {
     /// ```no_run
     /// use fpv_bridge::serial::ElrsSerial;
     ///
-    /// #[tokio::main]
-    /// async fn main() -> anyhow::Result<()> {
-    ///     let serial = ElrsSerial::open().await?;
+    /// fn main() -> anyhow::Result<()> {
+    ///     let serial = ElrsSerial::open()?;
     ///     Ok(())
     /// }
     /// ```
-    pub async fn open() -> Result<Self> {
-        Self::open_with_paths(DEFAULT_DEVICE_PATHS).await
+    pub fn open() -> Result<Self> {
+        Self::open_with_paths(DEFAULT_DEVICE_PATHS)
     }
 
     /// Open connection to ELRS module with custom device paths
@@ -77,7 +76,7 @@ impl ElrsSerial {
     /// # Returns
     ///
     /// * `Result<ElrsSerial>` - Connected serial port or error
-    pub async fn open_with_paths(paths: &[&str]) -> Result<Self> {
+    pub fn open_with_paths(paths: &[&str]) -> Result<Self> {
         for path in paths {
             debug!("Trying to open serial port: {}", path);
 
@@ -141,7 +140,7 @@ impl ElrsSerial {
     ///
     /// #[tokio::main]
     /// async fn main() -> anyhow::Result<()> {
-    ///     let mut serial = ElrsSerial::open().await?;
+    ///     let mut serial = ElrsSerial::open()?;
     ///
     ///     // Send test packet with all channels centered
     ///     let channels = [CRSF_CHANNEL_VALUE_CENTER; 16];
@@ -184,11 +183,11 @@ mod tests {
         assert_eq!(DEFAULT_DEVICE_PATHS[1], "/dev/ttyUSB0");
     }
 
-    #[tokio::test]
-    async fn test_open_with_invalid_paths_returns_error() {
+    #[test]
+    fn test_open_with_invalid_paths_returns_error() {
         // Try to open non-existent device paths
         let invalid_paths = &["/dev/nonexistent0", "/dev/nonexistent1"];
-        let result = ElrsSerial::open_with_paths(invalid_paths).await;
+        let result = ElrsSerial::open_with_paths(invalid_paths);
 
         // Should fail with SerialPortNotFound error
         assert!(result.is_err());
@@ -204,11 +203,11 @@ mod tests {
         }
     }
 
-    #[tokio::test]
-    async fn test_open_with_empty_paths_returns_error() {
+    #[test]
+    fn test_open_with_empty_paths_returns_error() {
         // Try to open with empty path list
         let empty_paths: &[&str] = &[];
-        let result = ElrsSerial::open_with_paths(empty_paths).await;
+        let result = ElrsSerial::open_with_paths(empty_paths);
 
         // Should fail with SerialPortNotFound error
         assert!(result.is_err());
@@ -273,11 +272,11 @@ mod tests {
 
     // Integration test - only runs if ELRS hardware is connected
     // Skipped in CI/CD environments
-    #[tokio::test]
+    #[test]
     #[ignore] // Run with: cargo test -- --ignored
-    async fn test_open_with_real_hardware() {
+    fn test_open_with_real_hardware() {
         // This test requires actual ELRS hardware connected
-        let result = ElrsSerial::open().await;
+        let result = ElrsSerial::open();
 
         if result.is_ok() {
             let serial = result.unwrap();
@@ -300,7 +299,7 @@ mod tests {
     #[ignore] // Run with: cargo test -- --ignored
     async fn test_send_packet_with_real_hardware() {
         // This test requires actual ELRS hardware connected
-        let result = ElrsSerial::open().await;
+        let result = ElrsSerial::open();
 
         if let Ok(mut serial) = result {
             // Send a test packet
