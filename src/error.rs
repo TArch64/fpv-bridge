@@ -26,6 +26,14 @@ pub enum FpvBridgeError {
     /// Serial port not found
     #[error("No ELRS device found. Tried: {0}")]
     SerialPortNotFound(String),
+
+    /// Controller errors
+    #[error("Controller error: {0}")]
+    Controller(String),
+
+    /// Controller not found
+    #[error("No PS5 DualSense controller found")]
+    ControllerNotFound,
 }
 
 /// Result type alias for FPV Bridge
@@ -81,5 +89,20 @@ mod tests {
         let debug_str = format!("{:?}", error);
         assert!(debug_str.contains("Serial"));
         assert!(debug_str.contains("test error"));
+    }
+
+    #[test]
+    fn test_controller_error_message() {
+        let error = FpvBridgeError::Controller("device disconnected".to_string());
+        let message = error.to_string();
+        assert!(message.contains("Controller error"));
+        assert!(message.contains("device disconnected"));
+    }
+
+    #[test]
+    fn test_controller_not_found_message() {
+        let error = FpvBridgeError::ControllerNotFound;
+        let message = error.to_string();
+        assert!(message.contains("No PS5 DualSense controller found"));
     }
 }
