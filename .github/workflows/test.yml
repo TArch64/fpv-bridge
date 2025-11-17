@@ -24,14 +24,15 @@ jobs:
 
       - name: Setup Rust
         uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          components: llvm-tools-preview
         # Note: This action automatically caches cargo registry, git dependencies, and build artifacts
 
-      - name: Install tarpaulin
-        run: |
-          curl -L https://github.com/xd009642/tarpaulin/releases/latest/download/cargo-tarpaulin-x86_64-unknown-linux-musl.tar.gz | tar xz -C ~/.cargo/bin
+      - name: Install cargo-llvm-cov
+        run: cargo install cargo-llvm-cov
 
       - name: Run tests
-        run: cargo tarpaulin --all-features --workspace --timeout 120 --out xml
+        run: cargo llvm-cov --all-features --workspace --cobertura --output-path cobertura.xml
 
       - name: Code Coverage Report
         uses: irongut/CodeCoverageSummary@v1.3.0
