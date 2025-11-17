@@ -72,7 +72,8 @@ impl DualSenseController {
     /// # Errors
     ///
     /// - `ControllerNotFound`: No DualSense controller found on the system
-    /// - `Io`: Permission denied or other I/O errors when opening device
+    /// - `Controller`: Permission denied, I/O errors, or directory access failures.
+    ///   See the [Permissions](#permissions) section for setup instructions.
     ///
     /// # Examples
     ///
