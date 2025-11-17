@@ -31,6 +31,7 @@ config/production.toml
 # Testing
 /coverage/
 tarpaulin-report.html
+cobertura.xml
 
 # Temporary files
 *.tmp
