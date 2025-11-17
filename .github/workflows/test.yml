@@ -9,6 +9,10 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+  pull-requests: write
+
 jobs:
   test:
     name: Run tests
@@ -20,6 +24,31 @@ jobs:
 
       - name: Setup Rust
         uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          components: llvm-tools-preview
+        # Note: This action automatically caches cargo registry, git dependencies, and build artifacts
+
+      - name: Install cargo-llvm-cov
+        run: |
+          cargo install cargo-llvm-cov --version 0.6.0 || cargo install cargo-llvm-cov
+          cargo llvm-cov --version
 
       - name: Run tests
-        run: cargo test --all-features
+        run: cargo llvm-cov --all-features --workspace --cobertura --output-path cobertura.xml
+
+      - name: Code Coverage Report
+        uses: irongut/CodeCoverageSummary@v1.3.0
+        continue-on-error: true
+        with:
+          filename: cobertura.xml
+          badge: true
+          format: markdown
+          output: both
+
+      - name: Add Coverage PR Comment
+        uses: marocchino/sticky-pull-request-comment@v2
+        if: github.event_name == 'pull_request'
+        continue-on-error: true
+        with:
+          recreate: true
+          path: code-coverage-results.md

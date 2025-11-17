@@ -172,4 +172,50 @@ mod tests {
             assert_eq!(channel, CRSF_CHANNEL_VALUE_CENTER, "All channels should be centered");
         }
     }
+
+    #[test]
+    fn test_failure_warning_threshold() {
+        // Verify failure threshold is reasonable
+        assert_eq!(FAILURE_WARNING_THRESHOLD, 10);
+
+        // At 250Hz, 10 failures = 40ms of consecutive failures
+        // This is a reasonable threshold before escalating to warnings
+        let failure_duration_ms = FAILURE_WARNING_THRESHOLD * 4; // 4ms per packet at 250Hz
+        assert_eq!(failure_duration_ms, 40, "Should tolerate 40ms of failures before warning");
+    }
+
+    #[test]
+    fn test_constants_are_consistent() {
+        // Verify that constants work together logically
+
+        // Packet rate and period
+        let period_ms = 1000 / PACKET_RATE_HZ;
+        assert_eq!(period_ms, 4, "250Hz rate should result in 4ms period");
+
+        // Log interval timing
+        let log_interval_seconds = LOG_INTERVAL_PACKETS as f64 / PACKET_RATE_HZ as f64;
+        assert_eq!(log_interval_seconds, 4.0, "Should log every 4 seconds");
+
+        // Failure threshold timing
+        let failure_threshold_ms = FAILURE_WARNING_THRESHOLD * period_ms;
+        assert_eq!(failure_threshold_ms, 40, "Should warn after 40ms of failures");
+
+        // Sanity checks
+        assert!(PACKET_RATE_HZ > 0, "Packet rate must be positive");
+        assert!(LOG_INTERVAL_PACKETS > 0, "Log interval must be positive");
+        assert!(FAILURE_WARNING_THRESHOLD > 0, "Failure threshold must be positive");
+    }
+
+    #[test]
+    fn test_elrs_standard_packet_rate() {
+        // ExpressLRS standard specifies 250Hz for RC channels
+        // This is critical for proper operation
+        assert_eq!(PACKET_RATE_HZ, 250,
+            "ELRS requires 250Hz packet rate for RC channels");
+
+        // Verify period calculation
+        let period_ms = 1000 / PACKET_RATE_HZ;
+        assert_eq!(period_ms, 4,
+            "250Hz should result in exactly 4ms period per packet");
+    }
 }

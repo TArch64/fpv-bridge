@@ -171,4 +171,77 @@ mod tests {
 
         assert_ne!(crc1, crc2, "CRC should change when data changes");
     }
+
+    #[test]
+    fn test_crc8_table_initialization() {
+        // Verify the lookup table has been properly initialized
+        // Check a few known values
+        assert_eq!(CRC8_TABLE.len(), 256);
+
+        // First entry should be 0 (CRC of 0x00)
+        assert_eq!(CRC8_TABLE[0], 0);
+
+        // Table values should be non-trivial for most indices
+        let non_zero_count = CRC8_TABLE.iter().filter(|&&x| x != 0).count();
+        assert!(non_zero_count > 200, "Table should have mostly non-zero values");
+    }
+
+    #[test]
+    fn test_crc8_polynomial_constant() {
+        // Verify the polynomial constant is correct for DVB-S2
+        assert_eq!(CRC8_POLY, 0xD5);
+    }
+
+    #[test]
+    fn test_crc8_large_data() {
+        // Test with larger data sets
+        let large_data: Vec<u8> = (0..64).collect();
+        let crc_fast = crc8_dvb_s2(&large_data);
+        let crc_slow = crc8_dvb_s2_slow(&large_data);
+        assert_eq!(crc_fast, crc_slow);
+        assert_ne!(crc_fast, 0); // Should produce non-zero CRC
+    }
+
+    #[test]
+    fn test_crc8_all_zeros_vs_all_ones() {
+        let zeros = vec![0x00; 10];
+        let ones = vec![0xFF; 10];
+
+        let crc_zeros = crc8_dvb_s2(&zeros);
+        let crc_ones = crc8_dvb_s2(&ones);
+
+        assert_ne!(crc_zeros, crc_ones);
+        assert_eq!(crc_zeros, 0x00); // CRC of all zeros should be zero
+        assert_ne!(crc_ones, 0x00); // CRC of all ones should not be zero
+    }
+
+    #[test]
+    fn test_crc8_slow_function_directly() {
+        // Test the slow function with various inputs
+        let test_cases = vec![
+            (vec![0x00], 0x00),
+            (vec![0x01, 0x02], crc8_dvb_s2_slow(&[0x01, 0x02])),
+            (vec![0xFF], crc8_dvb_s2_slow(&[0xFF])),
+        ];
+
+        for (data, expected) in test_cases {
+            assert_eq!(crc8_dvb_s2_slow(&data), expected);
+        }
+    }
+
+    #[test]
+    fn test_crc8_byte_boundaries() {
+        // Test with byte boundary values
+        let test_data = [
+            vec![0x00, 0x7F, 0x80, 0xFF],
+            vec![0x01, 0x80],
+            vec![0x7F, 0x81],
+        ];
+
+        for data in &test_data {
+            let crc_fast = crc8_dvb_s2(data);
+            let crc_slow = crc8_dvb_s2_slow(data);
+            assert_eq!(crc_fast, crc_slow, "Mismatch for data: {:?}", data);
+        }
+    }
 }

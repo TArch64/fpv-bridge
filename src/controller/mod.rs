@@ -9,7 +9,8 @@
 //! - Mapping inputs to RC channels
 //! - Calibration and safety checks
 
-// Module exports will be added as we implement submodules
-// pub mod ps5;
+pub mod ps5;
+
+// Future submodules
 // pub mod mapper;
 // pub mod calibration;

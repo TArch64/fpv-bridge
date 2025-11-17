@@ -13,6 +13,7 @@ categories = ["embedded", "hardware-support"]
 # Async runtime
 tokio = { version = "1.35", features = ["rt-multi-thread", "macros", "signal", "time", "sync", "io-util"] }
 tokio-serial = "5.4"
+async-trait = "0.1"
 
 # Controller input
 evdev = "0.12"
