@@ -20,6 +20,7 @@ jobs:
 
       - name: Setup Rust
         uses: actions-rust-lang/setup-rust-toolchain@v1
+        # Note: This action automatically caches cargo registry, git dependencies, and build artifacts
 
       - name: Install tarpaulin
         run: |
