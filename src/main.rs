@@ -101,7 +101,7 @@ async fn main() -> Result<()> {
                 // Encode and send CRSF packet with dummy values
                 let packet = encode_rc_channels_frame(&dummy_channels);
 
-                if let Err(e) = serial.send_packet(&packet).await {
+                if let Err(e) = serial.send_packet(&packet) {
                     consecutive_failures += 1;
 
                     if consecutive_failures >= FAILURE_WARNING_THRESHOLD {

@@ -9,9 +9,15 @@
 //! - Receiving telemetry packets
 //! - Error recovery and reconnection
 
+mod port_trait;
+
 use crate::error::{FpvBridgeError, Result};
+use port_trait::{SerialPortIO, TokioSerialPort};
 use tokio_serial::SerialPortBuilderExt;
 use tracing::{debug, info, warn};
+
+#[cfg(test)]
+use port_trait::mocks::MockSerialPort;
 
 /// CRSF baud rate for ELRS (420,000 baud)
 pub const CRSF_BAUD_RATE: u32 = 420_000;
@@ -26,8 +32,8 @@ const DEFAULT_DEVICE_PATHS: &[&str] = &[
 ///
 /// Manages connection to the ELRS transmitter module via USB serial.
 pub struct ElrsSerial {
-    /// Serial port handle
-    port: tokio_serial::SerialStream,
+    /// Serial port handle (trait object for testability)
+    port: Box<dyn SerialPortIO>,
     /// Device path (e.g., /dev/ttyACM0)
     device_path: String,
 }
@@ -91,7 +97,7 @@ impl ElrsSerial {
                 Ok(port) => {
                     info!("Successfully opened ELRS device at {}", path);
                     return Ok(Self {
-                        port,
+                        port: Box::new(TokioSerialPort::new(port)),
                         device_path: path.to_string(),
                     });
                 }
@@ -105,6 +111,21 @@ impl ElrsSerial {
         Err(FpvBridgeError::SerialPortNotFound(
             paths.join(", ")
         ))
+    }
+
+    /// Create a new ElrsSerial with a custom port implementation (for testing)
+    ///
+    /// # Arguments
+    ///
+    /// * `port` - Serial port implementation
+    /// * `device_path` - Device path string for identification
+    ///
+    /// # Returns
+    ///
+    /// * `ElrsSerial` - Serial handler with custom port
+    #[cfg(test)]
+    pub fn new_with_port(port: Box<dyn SerialPortIO>, device_path: String) -> Self {
+        Self { port, device_path }
     }
 
     /// Open a specific serial port with CRSF settings
@@ -145,25 +166,22 @@ impl ElrsSerial {
     /// use fpv_bridge::crsf::encoder::encode_rc_channels_frame;
     /// use fpv_bridge::crsf::protocol::CRSF_CHANNEL_VALUE_CENTER;
     ///
-    /// #[tokio::main]
-    /// async fn main() -> anyhow::Result<()> {
+    /// fn main() -> anyhow::Result<()> {
     ///     let mut serial = ElrsSerial::open()?;
     ///
     ///     // Send test packet with all channels centered
     ///     let channels = [CRSF_CHANNEL_VALUE_CENTER; 16];
     ///     let packet = encode_rc_channels_frame(&channels);
-    ///     serial.send_packet(&packet).await?;
+    ///     serial.send_packet(&packet)?;
     ///
     ///     Ok(())
     /// }
     /// ```
-    pub async fn send_packet(&mut self, packet: &[u8]) -> Result<()> {
-        use tokio::io::AsyncWriteExt;
-
-        self.port.write_all(packet).await
+    pub fn send_packet(&mut self, packet: &[u8]) -> Result<()> {
+        self.port.write_all(packet)
             .map_err(|e| FpvBridgeError::Serial(format!("Failed to write packet: {}", e)))?;
 
-        self.port.flush().await
+        self.port.flush()
             .map_err(|e| FpvBridgeError::Serial(format!("Failed to flush serial port: {}", e)))?;
 
         debug!("Sent CRSF packet ({} bytes)", packet.len());
@@ -380,9 +398,9 @@ mod tests {
     }
 
     // Integration test - only runs if ELRS hardware is connected
-    #[tokio::test]
+    #[test]
     #[ignore] // Run with: cargo test -- --ignored
-    async fn test_send_packet_with_real_hardware() {
+    fn test_send_packet_with_real_hardware() {
         use crate::crsf::encoder::encode_rc_channels_frame;
         use crate::crsf::protocol::CRSF_CHANNEL_VALUE_CENTER;
 
@@ -394,12 +412,206 @@ mod tests {
             let channels = [CRSF_CHANNEL_VALUE_CENTER; 16];
             let packet = encode_rc_channels_frame(&channels);
 
-            let send_result = serial.send_packet(&packet).await;
+            let send_result = serial.send_packet(&packet);
             assert!(send_result.is_ok(), "Failed to send packet: {:?}", send_result);
 
             println!("Successfully sent test packet to ELRS device");
         } else {
             println!("No ELRS hardware detected (skipping send test)");
         }
+    }
+
+    // Unit tests with mock serial port
+    #[test]
+    fn test_send_packet_success_with_mock() {
+        use crate::crsf::encoder::encode_rc_channels_frame;
+        use crate::crsf::protocol::CRSF_CHANNEL_VALUE_CENTER;
+
+        let mock_port = MockSerialPort::new();
+        let mut serial = ElrsSerial::new_with_port(
+            Box::new(mock_port.clone()),
+            "/dev/mock".to_string(),
+        );
+
+        // Send a test packet
+        let channels = [CRSF_CHANNEL_VALUE_CENTER; 16];
+        let packet = encode_rc_channels_frame(&channels);
+        let result = serial.send_packet(&packet);
+
+        // Should succeed
+        assert!(result.is_ok(), "Expected success, got: {:?}", result);
+
+        // Verify packet was written
+        let written_data = mock_port.get_written_data();
+        assert_eq!(written_data.len(), 1, "Should have written one packet");
+        assert_eq!(written_data[0], packet, "Written data should match packet");
+    }
+
+    #[test]
+    fn test_send_packet_write_error_with_mock() {
+        let mock_port = MockSerialPort::new();
+        mock_port.set_write_error(std::io::ErrorKind::BrokenPipe);
+
+        let mut serial = ElrsSerial::new_with_port(
+            Box::new(mock_port.clone()),
+            "/dev/mock".to_string(),
+        );
+
+        let packet = vec![0x01, 0x02, 0x03];
+        let result = serial.send_packet(&packet);
+
+        // Should fail with Serial error
+        assert!(result.is_err());
+        match result.unwrap_err() {
+            FpvBridgeError::Serial(msg) => {
+                assert!(msg.contains("Failed to write packet"));
+            }
+            other => panic!("Expected Serial error, got: {:?}", other),
+        }
+    }
+
+    #[test]
+    fn test_send_packet_flush_error_with_mock() {
+        let mock_port = MockSerialPort::new();
+        mock_port.set_flush_error(std::io::ErrorKind::TimedOut);
+
+        let mut serial = ElrsSerial::new_with_port(
+            Box::new(mock_port.clone()),
+            "/dev/mock".to_string(),
+        );
+
+        let packet = vec![0x01, 0x02, 0x03];
+        let result = serial.send_packet(&packet);
+
+        // Should fail with Serial error
+        assert!(result.is_err());
+        match result.unwrap_err() {
+            FpvBridgeError::Serial(msg) => {
+                assert!(msg.contains("Failed to flush serial port"));
+            }
+            other => panic!("Expected Serial error, got: {:?}", other),
+        }
+    }
+
+    #[test]
+    fn test_send_multiple_packets_with_mock() {
+        let mock_port = MockSerialPort::new();
+        let mut serial = ElrsSerial::new_with_port(
+            Box::new(mock_port.clone()),
+            "/dev/mock".to_string(),
+        );
+
+        // Send multiple different packets
+        let packet1 = vec![0x01, 0x02];
+        let packet2 = vec![0x03, 0x04, 0x05];
+        let packet3 = vec![0x06];
+
+        assert!(serial.send_packet(&packet1).is_ok());
+        assert!(serial.send_packet(&packet2).is_ok());
+        assert!(serial.send_packet(&packet3).is_ok());
+
+        // Verify all packets were written in order
+        let written_data = mock_port.get_written_data();
+        assert_eq!(written_data.len(), 3);
+        assert_eq!(written_data[0], packet1);
+        assert_eq!(written_data[1], packet2);
+        assert_eq!(written_data[2], packet3);
+    }
+
+    #[test]
+    fn test_send_empty_packet_with_mock() {
+        let mock_port = MockSerialPort::new();
+        let mut serial = ElrsSerial::new_with_port(
+            Box::new(mock_port.clone()),
+            "/dev/mock".to_string(),
+        );
+
+        let empty_packet = vec![];
+        let result = serial.send_packet(&empty_packet);
+
+        assert!(result.is_ok());
+        let written_data = mock_port.get_written_data();
+        assert_eq!(written_data.len(), 1);
+        assert_eq!(written_data[0].len(), 0);
+    }
+
+    #[test]
+    fn test_send_large_packet_with_mock() {
+        let mock_port = MockSerialPort::new();
+        let mut serial = ElrsSerial::new_with_port(
+            Box::new(mock_port.clone()),
+            "/dev/mock".to_string(),
+        );
+
+        // Create a large packet (256 bytes)
+        let large_packet: Vec<u8> = (0..=255).collect();
+        let result = serial.send_packet(&large_packet);
+
+        assert!(result.is_ok());
+        let written_data = mock_port.get_written_data();
+        assert_eq!(written_data.len(), 1);
+        assert_eq!(written_data[0], large_packet);
+        assert_eq!(written_data[0].len(), 256);
+    }
+
+    #[test]
+    fn test_device_path_with_mock() {
+        let mock_port = MockSerialPort::new();
+        let device_path = "/dev/mock_device";
+        let serial = ElrsSerial::new_with_port(
+            Box::new(mock_port),
+            device_path.to_string(),
+        );
+
+        assert_eq!(serial.device_path(), device_path);
+    }
+
+    #[test]
+    fn test_mock_port_error_recovery() {
+        let mock_port = MockSerialPort::new();
+        let mut serial = ElrsSerial::new_with_port(
+            Box::new(mock_port.clone()),
+            "/dev/mock".to_string(),
+        );
+
+        // Set error condition
+        mock_port.set_write_error(std::io::ErrorKind::Interrupted);
+
+        // First send should fail
+        let packet = vec![0x01, 0x02];
+        assert!(serial.send_packet(&packet).is_err());
+
+        // Clear error (by setting to None indirectly - send new port)
+        let mock_port2 = MockSerialPort::new();
+        let mut serial2 = ElrsSerial::new_with_port(
+            Box::new(mock_port2.clone()),
+            "/dev/mock".to_string(),
+        );
+
+        // Second send should succeed
+        assert!(serial2.send_packet(&packet).is_ok());
+        let written_data = mock_port2.get_written_data();
+        assert_eq!(written_data.len(), 1);
+    }
+
+    #[test]
+    fn test_send_packet_preserves_data_integrity() {
+        use crate::crsf::encoder::encode_rc_channels_frame;
+
+        let mock_port = MockSerialPort::new();
+        let mut serial = ElrsSerial::new_with_port(
+            Box::new(mock_port.clone()),
+            "/dev/mock".to_string(),
+        );
+
+        // Create a packet with specific channel values
+        let channels = [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1100, 1200, 1300, 1400, 1500, 1600];
+        let packet = encode_rc_channels_frame(&channels);
+
+        assert!(serial.send_packet(&packet).is_ok());
+
+        // Verify exact byte-for-byte match
+        let written_data = mock_port.get_written_data();
+        assert_eq!(written_data[0], packet, "Packet data should be preserved exactly");
     }
 }

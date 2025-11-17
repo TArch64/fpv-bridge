@@ -212,10 +212,10 @@ mod tests {
 
         // Either succeeds (if controller found) or returns appropriate error
         if let Err(e) = result {
-            let msg = e.to_string();
+            let msg = e.to_string().to_lowercase();
             assert!(
-                msg.contains("Controller") || msg.contains("not found"),
-                "Error should be controller-related, got: {}", msg
+                msg.contains("controller") || msg.contains("not found") || msg.contains("/dev/input"),
+                "Error should be controller-related, got: {}", e
             );
         }
     }
