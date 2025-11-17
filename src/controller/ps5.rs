@@ -9,6 +9,29 @@
 //! - Vendor ID: 0x054c (Sony)
 //! - Product ID: 0x0ce6 (DualSense, both wired and Bluetooth)
 //!
+//! ## Permissions
+//!
+//! Access to `/dev/input/event*` devices requires appropriate permissions.
+//!
+//! **Option 1: Add user to input group (recommended)**
+//! ```bash
+//! sudo usermod -a -G input $USER
+//! # Log out and back in for changes to take effect
+//! ```
+//!
+//! **Option 2: Create udev rule for specific controller**
+//! ```bash
+//! # Create /etc/udev/rules.d/99-dualsense.rules with:
+//! SUBSYSTEM=="input", ATTRS{idVendor}=="054c", ATTRS{idProduct}=="0ce6", MODE="0666"
+//! # Reload rules:
+//! sudo udevadm control --reload-rules && sudo udevadm trigger
+//! ```
+//!
+//! **Option 3: Run as root (not recommended for production)**
+//! ```bash
+//! sudo ./fpv-bridge
+//! ```
+//!
 //! ## Input Axes
 //!
 //! - Left stick: ABS_X (0-255), ABS_Y (0-255)
