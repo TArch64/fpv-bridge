@@ -494,4 +494,372 @@ port = "/dev/ttyUSB0"
         let result = Config::load(temp_file.path());
         assert!(result.is_ok());
     }
+
+    fn create_valid_config() -> Config {
+        Config {
+            serial: SerialConfig {
+                port: default_serial_port(),
+                baud_rate: default_baud_rate(),
+                timeout_ms: default_timeout_ms(),
+                reconnect_interval_ms: default_reconnect_interval_ms(),
+            },
+            controller: ControllerConfig {
+                device_path: String::new(),
+                deadzone_stick: default_deadzone_stick(),
+                deadzone_trigger: default_deadzone_trigger(),
+                expo_roll: default_expo_roll(),
+                expo_pitch: default_expo_pitch(),
+                expo_yaw: default_expo_yaw(),
+                expo_throttle: default_expo_throttle(),
+            },
+            channels: ChannelConfig {
+                throttle_min: default_throttle_min(),
+                throttle_max: default_throttle_max(),
+                center: default_center(),
+                channel_reverse: vec![],
+            },
+            telemetry: TelemetryConfig {
+                enabled: default_telemetry_enabled(),
+                log_dir: default_log_dir(),
+                max_records_per_file: default_max_records_per_file(),
+                max_files_to_keep: default_max_files_to_keep(),
+                log_interval_ms: default_log_interval_ms(),
+                format: default_log_format(),
+            },
+            safety: SafetyConfig {
+                arm_button_hold_ms: default_arm_button_hold_ms(),
+                auto_disarm_timeout_s: default_auto_disarm_timeout_s(),
+                failsafe_timeout_ms: default_failsafe_timeout_ms(),
+                min_throttle_to_arm: default_min_throttle_to_arm(),
+            },
+            crsf: CrsfConfig {
+                packet_rate_hz: default_packet_rate_hz(),
+                link_stats_interval_ms: default_link_stats_interval_ms(),
+            },
+        }
+    }
+
+    #[test]
+    fn test_empty_serial_port() {
+        let mut config = create_valid_config();
+        config.serial.port = String::new();
+        assert!(config.validate().is_err());
+    }
+
+    #[test]
+    fn test_empty_log_dir_when_enabled() {
+        let mut config = create_valid_config();
+        config.telemetry.enabled = true;
+        config.telemetry.log_dir = String::new();
+        assert!(config.validate().is_err());
+    }
+
+    #[test]
+    fn test_empty_log_dir_when_disabled() {
+        let mut config = create_valid_config();
+        config.telemetry.enabled = false;
+        config.telemetry.log_dir = String::new();
+        assert!(config.validate().is_ok());
+    }
+
+    #[test]
+    fn test_timeout_ms_zero() {
+        let mut config = create_valid_config();
+        config.serial.timeout_ms = 0;
+        assert!(config.validate().is_err());
+    }
+
+    #[test]
+    fn test_timeout_ms_too_high() {
+        let mut config = create_valid_config();
+        config.serial.timeout_ms = 10001;
+        assert!(config.validate().is_err());
+    }
+
+    #[test]
+    fn test_reconnect_interval_zero() {
+        let mut config = create_valid_config();
+        config.serial.reconnect_interval_ms = 0;
+        assert!(config.validate().is_err());
+    }
+
+    #[test]
+    fn test_reconnect_interval_too_high() {
+        let mut config = create_valid_config();
+        config.serial.reconnect_interval_ms = 60001;
+        assert!(config.validate().is_err());
+    }
+
+    #[test]
+    fn test_log_interval_zero() {
+        let mut config = create_valid_config();
+        config.telemetry.log_interval_ms = 0;
+        assert!(config.validate().is_err());
+    }
+
+    #[test]
+    fn test_log_interval_too_high() {
+        let mut config = create_valid_config();
+        config.telemetry.log_interval_ms = 60001;
+        assert!(config.validate().is_err());
+    }
+
+    #[test]
+    fn test_failsafe_timeout_zero() {
+        let mut config = create_valid_config();
+        config.safety.failsafe_timeout_ms = 0;
+        assert!(config.validate().is_err());
+    }
+
+    #[test]
+    fn test_failsafe_timeout_too_high() {
+        let mut config = create_valid_config();
+        config.safety.failsafe_timeout_ms = 60001;
+        assert!(config.validate().is_err());
+    }
+
+    #[test]
+    fn test_arm_button_hold_zero() {
+        let mut config = create_valid_config();
+        config.safety.arm_button_hold_ms = 0;
+        assert!(config.validate().is_err());
+    }
+
+    #[test]
+    fn test_arm_button_hold_too_high() {
+        let mut config = create_valid_config();
+        config.safety.arm_button_hold_ms = 10001;
+        assert!(config.validate().is_err());
+    }
+
+    #[test]
+    fn test_auto_disarm_timeout_zero() {
+        let mut config = create_valid_config();
+        config.safety.auto_disarm_timeout_s = 0;
+        assert!(config.validate().is_err());
+    }
+
+    #[test]
+    fn test_link_stats_interval_zero() {
+        let mut config = create_valid_config();
+        config.crsf.link_stats_interval_ms = 0;
+        assert!(config.validate().is_err());
+    }
+
+    #[test]
+    fn test_link_stats_interval_too_high() {
+        let mut config = create_valid_config();
+        config.crsf.link_stats_interval_ms = 60001;
+        assert!(config.validate().is_err());
+    }
+
+    #[test]
+    fn test_max_records_per_file_zero() {
+        let mut config = create_valid_config();
+        config.telemetry.max_records_per_file = 0;
+        assert!(config.validate().is_err());
+    }
+
+    #[test]
+    fn test_max_files_to_keep_zero() {
+        let mut config = create_valid_config();
+        config.telemetry.max_files_to_keep = 0;
+        assert!(config.validate().is_err());
+    }
+
+    #[test]
+    fn test_deadzone_stick_negative() {
+        let mut config = create_valid_config();
+        config.controller.deadzone_stick = -0.1;
+        assert!(config.validate().is_err());
+    }
+
+    #[test]
+    fn test_deadzone_trigger_too_high() {
+        let mut config = create_valid_config();
+        config.controller.deadzone_trigger = 0.3;
+        assert!(config.validate().is_err());
+    }
+
+    #[test]
+    fn test_expo_roll_negative() {
+        let mut config = create_valid_config();
+        config.controller.expo_roll = -0.1;
+        assert!(config.validate().is_err());
+    }
+
+    #[test]
+    fn test_expo_pitch_too_high() {
+        let mut config = create_valid_config();
+        config.controller.expo_pitch = 1.1;
+        assert!(config.validate().is_err());
+    }
+
+    #[test]
+    fn test_expo_yaw_invalid() {
+        let mut config = create_valid_config();
+        config.controller.expo_yaw = 2.0;
+        assert!(config.validate().is_err());
+    }
+
+    #[test]
+    fn test_expo_throttle_negative() {
+        let mut config = create_valid_config();
+        config.controller.expo_throttle = -0.5;
+        assert!(config.validate().is_err());
+    }
+
+    #[test]
+    fn test_throttle_min_too_low() {
+        let mut config = create_valid_config();
+        config.channels.throttle_min = 987;
+        assert!(config.validate().is_err());
+    }
+
+    #[test]
+    fn test_throttle_min_too_high() {
+        let mut config = create_valid_config();
+        config.channels.throttle_min = 1501;
+        assert!(config.validate().is_err());
+    }
+
+    #[test]
+    fn test_throttle_max_too_low() {
+        let mut config = create_valid_config();
+        config.channels.throttle_max = 1499;
+        assert!(config.validate().is_err());
+    }
+
+    #[test]
+    fn test_throttle_max_too_high() {
+        let mut config = create_valid_config();
+        config.channels.throttle_max = 2013;
+        assert!(config.validate().is_err());
+    }
+
+    #[test]
+    fn test_throttle_min_equals_max() {
+        let mut config = create_valid_config();
+        config.channels.throttle_min = 1500;
+        config.channels.throttle_max = 1500;
+        assert!(config.validate().is_err());
+    }
+
+    #[test]
+    fn test_throttle_min_greater_than_max() {
+        let mut config = create_valid_config();
+        config.channels.throttle_min = 1800;
+        config.channels.throttle_max = 1200;
+        assert!(config.validate().is_err());
+    }
+
+    #[test]
+    fn test_center_below_min() {
+        let mut config = create_valid_config();
+        config.channels.center = 900;
+        assert!(config.validate().is_err());
+    }
+
+    #[test]
+    fn test_center_above_max() {
+        let mut config = create_valid_config();
+        config.channels.center = 2100;
+        assert!(config.validate().is_err());
+    }
+
+    #[test]
+    fn test_channel_reverse_invalid_index() {
+        let mut config = create_valid_config();
+        config.channels.channel_reverse = vec![0, 5, 16]; // 16 is invalid
+        assert!(config.validate().is_err());
+    }
+
+    #[test]
+    fn test_channel_reverse_valid_indices() {
+        let mut config = create_valid_config();
+        config.channels.channel_reverse = vec![0, 5, 10, 15]; // All valid (0-15)
+        assert!(config.validate().is_ok());
+    }
+
+    #[test]
+    fn test_min_throttle_to_arm_below_range() {
+        let mut config = create_valid_config();
+        config.safety.min_throttle_to_arm = 900;
+        assert!(config.validate().is_err());
+    }
+
+    #[test]
+    fn test_min_throttle_to_arm_above_range() {
+        let mut config = create_valid_config();
+        config.safety.min_throttle_to_arm = 2100;
+        assert!(config.validate().is_err());
+    }
+
+    #[test]
+    fn test_invalid_baud_rate() {
+        let mut config = create_valid_config();
+        config.serial.baud_rate = 9600; // Not in the allowed list
+        assert!(config.validate().is_err());
+    }
+
+    #[test]
+    fn test_valid_baud_rates() {
+        for &baud in &[115200, 400000, 420000, 921600, 1870000, 3750000] {
+            let mut config = create_valid_config();
+            config.serial.baud_rate = baud;
+            assert!(config.validate().is_ok(), "Baud rate {} should be valid", baud);
+        }
+    }
+
+    #[test]
+    fn test_invalid_log_format() {
+        let mut config = create_valid_config();
+        config.telemetry.format = "csv".to_string();
+        assert!(config.validate().is_err());
+    }
+
+    #[test]
+    fn test_invalid_packet_rate() {
+        let mut config = create_valid_config();
+        config.crsf.packet_rate_hz = 100; // Not in the allowed list
+        assert!(config.validate().is_err());
+    }
+
+    #[test]
+    fn test_valid_packet_rates() {
+        for &rate in &[50, 150, 250, 500] {
+            let mut config = create_valid_config();
+            config.crsf.packet_rate_hz = rate;
+            assert!(config.validate().is_ok(), "Packet rate {} should be valid", rate);
+        }
+    }
+
+    #[test]
+    fn test_default_functions() {
+        assert_eq!(default_serial_port(), "/dev/ttyACM0");
+        assert_eq!(default_baud_rate(), 420000);
+        assert_eq!(default_timeout_ms(), 100);
+        assert_eq!(default_reconnect_interval_ms(), 1000);
+        assert_eq!(default_deadzone_stick(), 0.05);
+        assert_eq!(default_deadzone_trigger(), 0.10);
+        assert_eq!(default_expo_roll(), 0.3);
+        assert_eq!(default_expo_pitch(), 0.3);
+        assert_eq!(default_expo_yaw(), 0.2);
+        assert_eq!(default_expo_throttle(), 0.0);
+        assert_eq!(default_throttle_min(), 1000);
+        assert_eq!(default_throttle_max(), 2000);
+        assert_eq!(default_center(), 1500);
+        assert_eq!(default_telemetry_enabled(), true);
+        assert_eq!(default_log_dir(), "./logs");
+        assert_eq!(default_max_records_per_file(), 10000);
+        assert_eq!(default_max_files_to_keep(), 10);
+        assert_eq!(default_log_interval_ms(), 100);
+        assert_eq!(default_log_format(), "jsonl");
+        assert_eq!(default_arm_button_hold_ms(), 1000);
+        assert_eq!(default_auto_disarm_timeout_s(), 300);
+        assert_eq!(default_failsafe_timeout_ms(), 500);
+        assert_eq!(default_min_throttle_to_arm(), 1050);
+        assert_eq!(default_packet_rate_hz(), 250);
+        assert_eq!(default_link_stats_interval_ms(), 1000);
+    }
 }
