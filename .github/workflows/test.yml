@@ -27,7 +27,20 @@ jobs:
           curl -L https://github.com/xd009642/tarpaulin/releases/latest/download/cargo-tarpaulin-x86_64-unknown-linux-musl.tar.gz | tar xz -C ~/.cargo/bin
 
       - name: Run tests
-        run: cargo tarpaulin --all-features --workspace --timeout 120 --out xml
+        id: coverage
+        run: |
+          cargo tarpaulin --all-features --workspace --timeout 120 --out xml 2>&1 | tee output.txt
+          COVERAGE=$(grep -oP '\d+\.\d+%' output.txt | tail -1)
+          echo "percentage=$COVERAGE" >> $GITHUB_OUTPUT
+
+      - name: Comment coverage on PR
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: coverage
+          message: |
+            ## Code Coverage
+
+            **Coverage:** ${{ steps.coverage.outputs.percentage }}
 
       - name: Upload coverage
         uses: codecov/codecov-action@v4
