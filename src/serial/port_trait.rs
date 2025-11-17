@@ -1,14 +1,16 @@
 //! Trait abstraction for serial port operations to enable testing
 
+use async_trait::async_trait;
 use std::io;
 
 /// Trait for serial port I/O operations
+#[async_trait]
 pub trait SerialPortIO: Send {
     /// Write all data to the port
-    fn write_all(&mut self, data: &[u8]) -> io::Result<()>;
+    async fn write_all(&mut self, data: &[u8]) -> io::Result<()>;
 
     /// Flush the output buffer
-    fn flush(&mut self) -> io::Result<()>;
+    async fn flush(&mut self) -> io::Result<()>;
 }
 
 /// Wrapper around tokio_serial::SerialStream that implements SerialPortIO
@@ -22,20 +24,16 @@ impl TokioSerialPort {
     }
 }
 
+#[async_trait]
 impl SerialPortIO for TokioSerialPort {
-    fn write_all(&mut self, data: &[u8]) -> io::Result<()> {
+    async fn write_all(&mut self, data: &[u8]) -> io::Result<()> {
         use tokio::io::AsyncWriteExt;
-        // Block on async operation for sync trait
-        tokio::runtime::Handle::current().block_on(async {
-            self.port.write_all(data).await
-        })
+        self.port.write_all(data).await
     }
 
-    fn flush(&mut self) -> io::Result<()> {
+    async fn flush(&mut self) -> io::Result<()> {
         use tokio::io::AsyncWriteExt;
-        tokio::runtime::Handle::current().block_on(async {
-            self.port.flush().await
-        })
+        self.port.flush().await
     }
 }
 
@@ -74,8 +72,9 @@ pub mod mocks {
         }
     }
 
+    #[async_trait]
     impl SerialPortIO for MockSerialPort {
-        fn write_all(&mut self, data: &[u8]) -> io::Result<()> {
+        async fn write_all(&mut self, data: &[u8]) -> io::Result<()> {
             if let Some(error) = *self.write_error.lock().unwrap() {
                 return Err(io::Error::new(error, "Mock write error"));
             }
@@ -83,7 +82,7 @@ pub mod mocks {
             Ok(())
         }
 
-        fn flush(&mut self) -> io::Result<()> {
+        async fn flush(&mut self) -> io::Result<()> {
             if let Some(error) = *self.flush_error.lock().unwrap() {
                 return Err(io::Error::new(error, "Mock flush error"));
             }

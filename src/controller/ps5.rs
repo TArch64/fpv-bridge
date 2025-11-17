@@ -22,7 +22,7 @@
 //! **Option 2: Create udev rule for specific controller**
 //! ```bash
 //! # Create /etc/udev/rules.d/99-dualsense.rules with:
-//! SUBSYSTEM=="input", ATTRS{idVendor}=="054c", ATTRS{idProduct}=="0ce6", MODE="0666"
+//! SUBSYSTEM=="input", ATTRS{idVendor}=="054c", ATTRS{idProduct}=="0ce6", GROUP="input", MODE="0660"
 //! # Reload rules:
 //! sudo udevadm control --reload-rules && sudo udevadm trigger
 //! ```
@@ -101,6 +101,9 @@ impl DualSenseController {
         // Sort entries for deterministic device selection when multiple controllers are connected
         entries.sort_by_key(|entry| entry.path());
 
+        let mut permission_denied_count = 0;
+        let mut event_devices_checked = 0;
+
         for entry in entries {
             let path = entry.path();
 
@@ -112,6 +115,8 @@ impl DualSenseController {
             } else {
                 continue;
             }
+
+            event_devices_checked += 1;
 
             // Try to open the device
             match Device::open(&path) {
@@ -141,10 +146,24 @@ impl DualSenseController {
                     }
                 }
                 Err(e) => {
-                    // Permission denied or other errors - skip device
+                    // Track permission denied errors
+                    if e.kind() == std::io::ErrorKind::PermissionDenied {
+                        permission_denied_count += 1;
+                    }
                     debug!("Could not open {}: {}", path.display(), e);
                 }
             }
+        }
+
+        // Provide helpful error message if all failures were permission denied
+        if event_devices_checked > 0 && permission_denied_count == event_devices_checked {
+            return Err(FpvBridgeError::Controller(
+                format!(
+                    "Permission denied accessing /dev/input/event* devices. \
+                    See module documentation for setup instructions: \
+                    add user to 'input' group or configure udev rules."
+                )
+            ));
         }
 
         Err(FpvBridgeError::ControllerNotFound)
