@@ -10,8 +10,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  test-and-coverage:
-    name: Tests and coverage
+  test:
+    name: Run tests
     runs-on: ubuntu-latest
 
     steps:
@@ -48,7 +48,7 @@ jobs:
       - name: Install cargo-tarpaulin
         run: test -e ~/.cargo/bin/cargo-tarpaulin || cargo install cargo-tarpaulin
 
-      - name: Run tests with coverage
+      - name: Run tests
         run: cargo tarpaulin --all-features --workspace --timeout 120 --out xml --out stdout --output-dir coverage
 
       - name: Upload coverage to Codecov
