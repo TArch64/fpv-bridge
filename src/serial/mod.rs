@@ -304,6 +304,57 @@ mod tests {
         }
     }
 
+    #[test]
+    fn test_open_uses_default_paths() {
+        // Verify that open() delegates to open_with_paths with DEFAULT_DEVICE_PATHS
+        // This test ensures the convenience method works as expected
+        let result = ElrsSerial::open();
+
+        // Should attempt to use default paths
+        // Will fail on CI without hardware, but that's expected
+        if let Err(FpvBridgeError::SerialPortNotFound(msg)) = result {
+            // Error message should contain the default paths
+            assert!(msg.contains("/dev/ttyACM0"), "Error should mention /dev/ttyACM0");
+            assert!(msg.contains("/dev/ttyUSB0"), "Error should mention /dev/ttyUSB0");
+        }
+    }
+
+    #[test]
+    fn test_serial_port_not_found_error_message_format() {
+        // Verify error message format when paths are not found
+        let paths = &["/dev/test1", "/dev/test2", "/dev/test3"];
+        let result = ElrsSerial::open_with_paths(paths);
+
+        assert!(result.is_err());
+        if let Err(FpvBridgeError::SerialPortNotFound(msg)) = result {
+            // Should contain all attempted paths
+            assert!(msg.contains("/dev/test1"));
+            assert!(msg.contains("/dev/test2"));
+            assert!(msg.contains("/dev/test3"));
+
+            // Should be comma-separated
+            assert!(msg.contains(", "));
+        } else {
+            panic!("Expected SerialPortNotFound error");
+        }
+    }
+
+    #[test]
+    fn test_error_message_contains_path_on_open_failure() {
+        // Verify that error messages include the failing path for debugging
+        let nonexistent_path = "/dev/this_definitely_does_not_exist_12345";
+        let result = ElrsSerial::open_port(nonexistent_path);
+
+        assert!(result.is_err());
+        if let Err(FpvBridgeError::Serial(msg)) = result {
+            // Error should mention both the operation and the path
+            assert!(msg.contains("Failed to open"), "Error should mention operation");
+            assert!(msg.contains(nonexistent_path), "Error should mention the failing path");
+        } else {
+            panic!("Expected Serial error");
+        }
+    }
+
     // Integration test - only runs if ELRS hardware is connected
     // Skipped in CI/CD environments
     #[test]

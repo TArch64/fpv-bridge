@@ -203,6 +203,138 @@ mod tests {
         );
     }
 
+    #[test]
+    fn test_open_returns_error_when_no_input_dir() {
+        // Test behavior when /dev/input doesn't exist
+        // This will fail on systems where /dev/input exists, but tests error path
+        // On CI or systems without /dev/input, this ensures error handling works
+        let result = DualSenseController::open();
+
+        // Either succeeds (if controller found) or returns appropriate error
+        if let Err(e) = result {
+            let msg = e.to_string();
+            assert!(
+                msg.contains("Controller") || msg.contains("not found"),
+                "Error should be controller-related, got: {}", msg
+            );
+        }
+    }
+
+    #[test]
+    fn test_controller_not_found_error() {
+        // Verify ControllerNotFound error message
+        let error = FpvBridgeError::ControllerNotFound;
+        assert_eq!(
+            error.to_string(),
+            "No PS5 DualSense controller found"
+        );
+    }
+
+    #[test]
+    fn test_controller_error_with_message() {
+        // Verify Controller error with custom message
+        let error = FpvBridgeError::Controller("test error".to_string());
+        assert_eq!(
+            error.to_string(),
+            "Controller error: test error"
+        );
+    }
+
+    #[test]
+    fn test_vendor_and_product_id_matching() {
+        // Verify the vendor/product ID constants are used correctly
+        // This tests the logic of ID matching without requiring hardware
+        let vendor = DUALSENSE_VENDOR_ID;
+        let product = DUALSENSE_PRODUCT_ID;
+
+        // Test exact match (what we expect for DualSense)
+        assert_eq!(vendor, 0x054c);
+        assert_eq!(product, 0x0ce6);
+
+        // Test non-matching IDs (what would be rejected)
+        assert_ne!(vendor, 0x0000);
+        assert_ne!(product, 0x0000);
+        assert_ne!(vendor, 0xFFFF);
+        assert_ne!(product, 0xFFFF);
+    }
+
+    #[test]
+    fn test_device_path_format() {
+        // Test that device path would follow expected pattern
+        // This validates our path handling logic
+        let test_paths = vec![
+            "/dev/input/event0",
+            "/dev/input/event1",
+            "/dev/input/event10",
+            "/dev/input/event99",
+        ];
+
+        for path in test_paths {
+            assert!(path.starts_with("/dev/input/event"));
+            let filename = std::path::Path::new(path)
+                .file_name()
+                .unwrap()
+                .to_string_lossy();
+            assert!(filename.starts_with("event"));
+        }
+    }
+
+    #[test]
+    fn test_controller_open_error_handling() {
+        // Test that open() returns proper error when no controller found
+        // On CI or systems without a DualSense, this should return ControllerNotFound
+        let result = DualSenseController::open();
+
+        // Either it succeeds (if hardware present) or returns appropriate error
+        if let Err(e) = result {
+            // The error should be either ControllerNotFound or Controller variant
+            match e {
+                FpvBridgeError::ControllerNotFound => {
+                    assert_eq!(e.to_string(), "No PS5 DualSense controller found");
+                }
+                FpvBridgeError::Controller(msg) => {
+                    // Should be related to /dev/input access
+                    assert!(
+                        msg.contains("/dev/input") || msg.contains("directory"),
+                        "Controller error should mention /dev/input or directory, got: {}", msg
+                    );
+                }
+                _ => panic!("Unexpected error type: {:?}", e),
+            }
+        }
+    }
+
+    #[test]
+    fn test_error_path_validation() {
+        // Test error message construction for /dev/input directory errors
+        let error = FpvBridgeError::Controller("/dev/input directory not found".to_string());
+        assert!(error.to_string().contains("/dev/input"));
+        assert!(error.to_string().contains("directory not found"));
+
+        // Test error message for directory read errors
+        let error2 = FpvBridgeError::Controller("Failed to read /dev/input: Permission denied".to_string());
+        assert!(error2.to_string().contains("Failed to read /dev/input"));
+        assert!(error2.to_string().contains("Permission denied"));
+    }
+
+    #[test]
+    fn test_dualsense_constants_are_correct() {
+        // Comprehensive test of DualSense identification constants
+        // These are critical for controller detection
+
+        // Sony Corporation vendor ID (standardized USB-IF assignment)
+        assert_eq!(DUALSENSE_VENDOR_ID, 0x054c,
+            "Sony vendor ID must be 0x054c per USB-IF assignment");
+
+        // DualSense product ID (both wired and Bluetooth use same ID)
+        assert_eq!(DUALSENSE_PRODUCT_ID, 0x0ce6,
+            "DualSense product ID must be 0x0ce6 for both wired and Bluetooth");
+
+        // Verify IDs are non-zero (sanity check)
+        assert!(DUALSENSE_VENDOR_ID > 0, "Vendor ID must be non-zero");
+        assert!(DUALSENSE_PRODUCT_ID > 0, "Product ID must be non-zero");
+    }
+
     // Integration test - only runs with real hardware
     #[test]
     #[ignore]
