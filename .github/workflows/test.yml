@@ -21,31 +21,25 @@ jobs:
       - name: Setup Rust
         uses: actions-rust-lang/setup-rust-toolchain@v1
 
-      - name: Install cargo-tarpaulin
-        run: cargo install cargo-tarpaulin
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
-      - name: Run tests and generate coverage
-        id: coverage
+      - name: Install tarpaulin
         run: |
-          cargo tarpaulin --all-features --workspace --timeout 120 --out xml --output-dir coverage 2>&1 | tee coverage_output.txt
-          COVERAGE=$(grep -oP '\d+\.\d+%' coverage_output.txt | tail -1)
-          echo "percentage=$COVERAGE" >> $GITHUB_OUTPUT
-          echo "Coverage: $COVERAGE"
+          curl -L https://github.com/xd009642/tarpaulin/releases/latest/download/cargo-tarpaulin-x86_64-unknown-linux-musl.tar.gz | tar xz -C ~/.cargo/bin
 
-      - name: Comment coverage on PR
-        uses: marocchino/sticky-pull-request-comment@v2
-        if: github.event_name == 'pull_request'
-        with:
-          header: coverage
-          message: |
-            ## Code Coverage Report
+      - name: Run tests
+        run: cargo tarpaulin --all-features --workspace --timeout 120 --out xml
 
-            📊 **Coverage:** ${{ steps.coverage.outputs.percentage }}
-
-      - name: Upload coverage to Codecov
+      - name: Upload coverage
         uses: codecov/codecov-action@v4
-        if: github.event_name == 'pull_request'
         with:
-          files: ./coverage/cobertura.xml
           fail_ci_if_error: false
           token: ${{ secrets.CODECOV_TOKEN }}
+

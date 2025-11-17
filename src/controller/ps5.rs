@@ -70,15 +70,15 @@ impl DualSenseController {
             ));
         }
 
-        let entries = std::fs::read_dir(input_dir).map_err(|e| {
-            FpvBridgeError::Controller(format!("Failed to read /dev/input: {}", e))
-        })?;
+        let mut entries: Vec<_> = std::fs::read_dir(input_dir)
+            .map_err(|e| FpvBridgeError::Controller(format!("Failed to read /dev/input: {}", e)))?
+            .collect::<std::result::Result<Vec<_>, _>>()
+            .map_err(|e| FpvBridgeError::Controller(format!("Failed to read directory entry: {}", e)))?;
+
+        // Sort entries for deterministic device selection when multiple controllers are connected
+        entries.sort_by_key(|entry| entry.path());
 
         for entry in entries {
-            let entry = entry.map_err(|e| {
-                FpvBridgeError::Controller(format!("Failed to read directory entry: {}", e))
-            })?;
-
             let path = entry.path();
 
             // Only check event* devices
@@ -225,7 +225,7 @@ mod tests {
 
         println!("Move controller sticks or press buttons within 5 seconds...");
 
-        // Try to read events multiple times
+        // Try to read events over 5 seconds (100 iterations * 50ms)
         for _ in 0..100 {
             match controller.fetch_events() {
                 Ok(events) => {
@@ -236,6 +236,9 @@ mod tests {
                 }
                 Err(_) => continue,
             }
+
+            // Sleep 50ms between iterations to allow user interaction time
+            std::thread::sleep(std::time::Duration::from_millis(50));
         }
 
         panic!("No events received from controller");
