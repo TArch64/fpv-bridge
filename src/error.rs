@@ -105,4 +105,25 @@ mod tests {
         let message = error.to_string();
         assert!(message.contains("No PS5 DualSense controller found"));
     }
+
+    #[test]
+    fn test_config_error_conversion() {
+        // Test that toml::de::Error converts properly to Config variant
+        let toml_str = "invalid toml {{{";
+        let result: std::result::Result<toml::Value, toml::de::Error> = toml::from_str(toml_str);
+
+        match result {
+            Err(toml_error) => {
+                let error: FpvBridgeError = toml_error.into();
+                match error {
+                    FpvBridgeError::Config(_) => {
+                        let msg = error.to_string();
+                        assert!(msg.contains("Configuration error"));
+                    }
+                    _ => panic!("Expected Config variant"),
+                }
+            }
+            Ok(_) => panic!("Expected parsing to fail"),
+        }
+    }
 }
