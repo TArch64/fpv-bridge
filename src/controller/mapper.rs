@@ -212,10 +212,15 @@ impl ControllerState {
     /// Checks if any stick has moved from center position.
     ///
     /// Useful for detecting controller activity for auto-disarm timeout.
+    /// Returns `true` if any stick deviation from center is **strictly greater than** the threshold.
     ///
     /// # Arguments
     ///
-    /// * `threshold` - Minimum deviation from center to consider "moved" (0-127)
+    /// * `threshold` - Deviation from center must exceed this value (valid range: 0-127)
+    ///
+    /// # Panics
+    ///
+    /// Debug builds will panic if `threshold` is outside the valid range 0-127.
     ///
     /// # Examples
     ///
@@ -230,6 +235,11 @@ impl ControllerState {
     /// ```
     #[must_use]
     pub fn any_stick_moved(&self, threshold: i32) -> bool {
+        debug_assert!(
+            (0..=127).contains(&threshold),
+            "threshold must be in range 0-127, got {}",
+            threshold
+        );
         (self.left_stick_x - AXIS_CENTER).abs() > threshold
             || (self.left_stick_y - AXIS_CENTER).abs() > threshold
             || (self.right_stick_x - AXIS_CENTER).abs() > threshold
@@ -269,9 +279,15 @@ impl ControllerState {
 
     /// Checks if any trigger is pressed beyond a threshold.
     ///
+    /// Returns `true` if any trigger value is **strictly greater than** the threshold.
+    ///
     /// # Arguments
     ///
-    /// * `threshold` - Minimum value to consider "pressed" (0-255)
+    /// * `threshold` - Trigger value must exceed this value (valid range: 0-255)
+    ///
+    /// # Panics
+    ///
+    /// Debug builds will panic if `threshold` is outside the valid range 0-255.
     ///
     /// # Examples
     ///
@@ -286,6 +302,11 @@ impl ControllerState {
     /// ```
     #[must_use]
     pub fn any_trigger_pressed(&self, threshold: i32) -> bool {
+        debug_assert!(
+            (0..=255).contains(&threshold),
+            "threshold must be in range 0-255, got {}",
+            threshold
+        );
         self.trigger_l2 > threshold || self.trigger_r2 > threshold
     }
 }
