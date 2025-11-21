@@ -35,7 +35,7 @@
 //! assert!((channels[0] as i32 - 1024).abs() <= 5);
 //! ```
 
-use super::mapper::{ControllerState, AXIS_CENTER, AXIS_MAX, AXIS_MIN};
+use super::mapper::{ControllerState, AXIS_MAX, AXIS_MIN};
 use crate::crsf::protocol::{
     RcChannels, CRSF_CHANNEL_VALUE_CENTER, CRSF_CHANNEL_VALUE_MAX, CRSF_CHANNEL_VALUE_MIN,
     CRSF_NUM_CHANNELS,
@@ -124,7 +124,7 @@ impl ChannelMapper {
     pub fn with_reversed(reversed: &[usize]) -> Self {
         let mut reversed_channels = [false; CRSF_NUM_CHANNELS];
         for &ch in reversed {
-            if ch >= 1 && ch <= CRSF_NUM_CHANNELS {
+            if (1..=CRSF_NUM_CHANNELS).contains(&ch) {
                 reversed_channels[ch - 1] = true;
             }
         }
@@ -240,6 +240,7 @@ impl ChannelMapper {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::controller::mapper::AXIS_CENTER;
 
     // ==================== Scaling Tests ====================
 
