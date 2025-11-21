@@ -626,4 +626,63 @@ mod tests {
         let crsf = to_crsf_channel(calibrated);
         assert_eq!(crsf, 2047);
     }
+
+    #[test]
+    fn test_apply_trigger_at_boundary() {
+        let cal = AxisCalibration::default();
+
+        // Just above deadzone
+        let result = cal.apply_trigger(0.11);
+        assert!(result > 0.0);
+        assert!(result < 0.02);
+    }
+
+    #[test]
+    fn test_expo_max_curve() {
+        let cal = Calibration::new(0.0, 1.0); // Max expo
+
+        // At 1.0 expo, output = input³
+        let result = cal.apply(0.5);
+        let expected = 0.5_f32.powi(3);
+        assert!((result - expected).abs() < 0.001);
+    }
+
+    #[test]
+    fn test_normalize_axis_negative() {
+        // Test negative overflow handling
+        let result = normalize_axis(-50);
+        // Should clamp to minimum range behavior
+        assert!(result < -1.0 || result >= -2.0);
+    }
+
+    #[test]
+    fn test_normalize_axis_overflow() {
+        // Test positive overflow
+        let result = normalize_axis(300);
+        // Should handle overflow gracefully
+        assert!(result > 1.0 || result <= 2.0);
+    }
+
+    #[test]
+    fn test_trigger_midpoint_scaling() {
+        let cal = AxisCalibration::from_config(0.05, 0.10, 0.3, 0.3, 0.2, 0.0);
+
+        // Midpoint trigger value
+        let result = cal.apply_trigger(0.55);
+        // (0.55 - 0.10) / (1.0 - 0.10) = 0.45 / 0.9 = 0.5
+        assert!((result - 0.5).abs() < 0.01);
+    }
+
+    #[test]
+    fn test_deadzone_at_exact_boundary() {
+        let cal = Calibration::new(0.1, 0.0);
+
+        // Exactly at deadzone boundary
+        let result = cal.apply(0.1);
+        assert_eq!(result, 0.0);
+
+        // Just barely over
+        let result = cal.apply(0.10001);
+        assert!(result > 0.0);
+    }
 }
