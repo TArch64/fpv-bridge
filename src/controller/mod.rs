@@ -9,5 +9,6 @@
 //! - Mapping inputs to RC channels
 //! - Calibration and safety checks
 
+pub mod channel_mapper;
 pub mod mapper;
 pub mod ps5;
