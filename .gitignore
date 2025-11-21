@@ -32,6 +32,8 @@ config/production.toml
 /coverage/
 tarpaulin-report.html
 cobertura.xml
+lcov.info
+*.lcov
 
 # Temporary files
 *.tmp
