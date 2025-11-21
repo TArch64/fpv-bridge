@@ -274,22 +274,24 @@ impl AxisCalibration {
 ///
 /// # Returns
 ///
-/// Normalized value where 0 = -1.0, 128 = 0.0, 255 = 1.0
+/// Normalized value where 0 = -1.0, 127.5 = 0.0, 255 = 1.0
 ///
 /// # Examples
 ///
 /// ```
 /// use fpv_bridge::controller::calibration::normalize_axis;
 ///
-/// assert!((normalize_axis(0) - (-1.0)).abs() < 0.01);
+/// assert_eq!(normalize_axis(0), -1.0);
+/// assert_eq!(normalize_axis(255), 1.0);
 /// assert!((normalize_axis(128) - 0.0).abs() < 0.01);
-/// assert!((normalize_axis(255) - 1.0).abs() < 0.01);
 /// ```
 #[must_use]
 pub fn normalize_axis(raw: i32) -> f32 {
-    // Map 0-255 to -1.0 to 1.0
-    // 128 is center (0.0)
-    ((raw as f32) - 128.0) / 127.0
+    // Map 0-255 to -1.0 to 1.0 symmetrically
+    // 127.5 is center (0.0)
+    let normalized = (raw as f32 - 127.5) / 127.5;
+    // Clamp to ensure we stay within valid range even for out-of-range inputs
+    normalized.clamp(-1.0, 1.0)
 }
 
 /// Converts raw trigger value (0-255) to normalized value (0.0 to 1.0).
@@ -546,9 +548,12 @@ mod tests {
 
     #[test]
     fn test_normalize_axis() {
-        assert!((normalize_axis(0) - (-1.0)).abs() < 0.01);
+        // Exact boundary values with symmetric formula
+        assert_eq!(normalize_axis(0), -1.0);
+        assert_eq!(normalize_axis(255), 1.0);
+
+        // Center value (127.5 rounds to approximately 0)
         assert!((normalize_axis(128) - 0.0).abs() < 0.01);
-        assert!((normalize_axis(255) - 1.0).abs() < 0.01);
     }
 
     #[test]
@@ -608,11 +613,23 @@ mod tests {
 
     #[test]
     fn test_normalize_and_convert_roundtrip() {
-        // Center value
+        // Test boundaries
+        let raw = 0;
+        let normalized = normalize_axis(raw);
+        let crsf = to_crsf_channel(normalized);
+        assert_eq!(crsf, 0);
+
+        let raw = 255;
+        let normalized = normalize_axis(raw);
+        let crsf = to_crsf_channel(normalized);
+        assert_eq!(crsf, 2047);
+
+        // Center value (127.5 is true center, 128 is slightly off)
         let raw = 128;
         let normalized = normalize_axis(raw);
         let crsf = to_crsf_channel(normalized);
-        assert!((crsf as i32 - 1024).abs() <= 1);
+        // 128 normalizes to slightly above 0, so CRSF should be slightly above 1024
+        assert!((crsf as i32 - 1024).abs() <= 4);
     }
 
     #[test]
@@ -648,19 +665,23 @@ mod tests {
     }
 
     #[test]
-    fn test_normalize_axis_negative() {
-        // Test negative overflow handling
+    fn test_normalize_axis_negative_clamp() {
+        // Test negative input is clamped to -1.0
         let result = normalize_axis(-50);
-        // Should clamp to minimum range behavior
-        assert!(result < -1.0 || result >= -2.0);
+        assert_eq!(result, -1.0);
+
+        let result = normalize_axis(-1000);
+        assert_eq!(result, -1.0);
     }
 
     #[test]
-    fn test_normalize_axis_overflow() {
-        // Test positive overflow
+    fn test_normalize_axis_overflow_clamp() {
+        // Test positive overflow is clamped to 1.0
         let result = normalize_axis(300);
-        // Should handle overflow gracefully
-        assert!(result > 1.0 || result <= 2.0);
+        assert_eq!(result, 1.0);
+
+        let result = normalize_axis(1000);
+        assert_eq!(result, 1.0);
     }
 
     #[test]
