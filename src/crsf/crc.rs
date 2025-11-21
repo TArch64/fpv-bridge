@@ -244,4 +244,56 @@ mod tests {
             assert_eq!(crc_fast, crc_slow, "Mismatch for data: {:?}", data);
         }
     }
+
+    #[test]
+    fn test_crc8_all_single_byte_values() {
+        // Comprehensive test: verify lookup table for all 256 possible byte values
+        // This ensures the lookup table is correctly generated and matches
+        // the polynomial calculation for every single byte
+        for byte_val in 0..=255u8 {
+            let data = [byte_val];
+            let crc_fast = crc8_dvb_s2(&data);
+            let crc_slow = crc8_dvb_s2_slow(&data);
+            assert_eq!(
+                crc_fast, crc_slow,
+                "CRC mismatch for byte 0x{:02X}: fast=0x{:02X}, slow=0x{:02X}",
+                byte_val, crc_fast, crc_slow
+            );
+
+            // Also verify this matches the lookup table entry
+            assert_eq!(
+                CRC8_TABLE[byte_val as usize], crc_fast,
+                "Lookup table mismatch for byte 0x{:02X}",
+                byte_val
+            );
+        }
+    }
+
+    #[test]
+    fn test_crc8_two_byte_patterns() {
+        // Test all combinations of high bit patterns in two-byte sequences
+        // This exercises the XOR chains in the polynomial calculation
+        let test_patterns = [
+            (0x00, 0x00),
+            (0x00, 0xFF),
+            (0xFF, 0x00),
+            (0xFF, 0xFF),
+            (0x80, 0x80),
+            (0x7F, 0x7F),
+            (0xAA, 0x55), // Alternating bits
+            (0x55, 0xAA),
+            (0xD5, 0xD5), // Polynomial value itself
+        ];
+
+        for &(byte1, byte2) in &test_patterns {
+            let data = [byte1, byte2];
+            let crc_fast = crc8_dvb_s2(&data);
+            let crc_slow = crc8_dvb_s2_slow(&data);
+            assert_eq!(
+                crc_fast, crc_slow,
+                "Mismatch for pattern [0x{:02X}, 0x{:02X}]",
+                byte1, byte2
+            );
+        }
+    }
 }
