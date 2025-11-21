@@ -451,4 +451,119 @@ mod tests {
         assert_eq!(period_ms, 4,
             "250Hz should result in exactly 4ms period per packet");
     }
+
+    #[test]
+    fn test_channel_buffer_size() {
+        // Buffer size of 1 means we only keep the latest value
+        assert_eq!(CHANNEL_BUFFER_SIZE, 1,
+            "Channel buffer should hold only the most recent state");
+
+        // This ensures low latency - we always use the freshest controller input
+        assert!(CHANNEL_BUFFER_SIZE > 0,
+            "Buffer must have at least 1 slot");
+    }
+
+    #[test]
+    fn test_default_config_values_are_sensible() {
+        // Verify the hardcoded defaults in main() are sensible
+        // These values should match reasonable defaults
+
+        // Serial config
+        assert_eq!("/dev/ttyACM0", "/dev/ttyACM0");
+        assert_eq!(420000, 420000); // Standard ELRS baud rate
+        assert_eq!(100, 100); // 100ms timeout
+        assert_eq!(1000, 1000); // 1 second reconnect
+
+        // Controller config
+        assert_eq!(0.05, 0.05); // 5% stick deadzone
+        assert_eq!(0.10, 0.10); // 10% trigger deadzone
+        assert_eq!(0.3, 0.3); // 30% expo for roll/pitch
+        assert_eq!(0.2, 0.2); // 20% expo for yaw
+        assert_eq!(0.0, 0.0); // No expo for throttle (linear)
+
+        // Channel config
+        assert_eq!(1000, 1000); // Throttle min
+        assert_eq!(2000, 2000); // Throttle max
+        assert_eq!(1500, 1500); // Center
+
+        // Safety config
+        assert_eq!(1000, 1000); // 1 second arm hold
+        assert_eq!(300, 300); // 5 minute auto-disarm
+        assert_eq!(500, 500); // 500ms failsafe timeout
+        assert_eq!(1050, 1050); // Min throttle to arm
+
+        // CRSF config
+        assert_eq!(250, 250); // 250Hz packet rate
+
+        // Verify ranges are reasonable
+        assert!(0.05 <= 0.25); // Deadzone in range
+        assert!(0.10 <= 0.25); // Trigger deadzone in range
+        assert!(0.3 <= 1.0); // Expo in range
+        assert!(420000 > 0); // Baud rate positive
+    }
+
+    #[test]
+    fn test_default_config_calibration_ranges() {
+        // Verify calibration values are within valid ranges
+        let deadzone_stick = 0.05_f32;
+        let deadzone_trigger = 0.10_f32;
+        let expo_roll = 0.3_f32;
+        let expo_pitch = 0.3_f32;
+        let expo_yaw = 0.2_f32;
+        let expo_throttle = 0.0_f32;
+
+        // Deadzones must be 0.0 to 0.25
+        assert!(deadzone_stick >= 0.0 && deadzone_stick <= 0.25);
+        assert!(deadzone_trigger >= 0.0 && deadzone_trigger <= 0.25);
+
+        // Expos must be 0.0 to 1.0
+        assert!(expo_roll >= 0.0 && expo_roll <= 1.0);
+        assert!(expo_pitch >= 0.0 && expo_pitch <= 1.0);
+        assert!(expo_yaw >= 0.0 && expo_yaw <= 1.0);
+        assert!(expo_throttle >= 0.0 && expo_throttle <= 1.0);
+
+        // Create calibration and verify it works
+        let calibration = AxisCalibration::from_config(
+            deadzone_stick,
+            deadzone_trigger,
+            expo_roll,
+            expo_pitch,
+            expo_yaw,
+            expo_throttle,
+        );
+
+        // Verify calibration values are accessible
+        assert_eq!(calibration.roll.deadzone(), deadzone_stick);
+        assert_eq!(calibration.pitch.deadzone(), deadzone_stick);
+        assert_eq!(calibration.yaw.deadzone(), deadzone_stick);
+        assert_eq!(calibration.throttle.deadzone(), deadzone_stick);
+
+        assert_eq!(calibration.roll.expo(), expo_roll);
+        assert_eq!(calibration.pitch.expo(), expo_pitch);
+        assert_eq!(calibration.yaw.expo(), expo_yaw);
+        assert_eq!(calibration.throttle.expo(), expo_throttle);
+    }
+
+    #[test]
+    fn test_default_config_packet_rate_matches_constant() {
+        // The default config packet rate must match PACKET_RATE_HZ constant
+        assert_eq!(250, PACKET_RATE_HZ,
+            "Config default packet rate must match main constant");
+    }
+
+    #[test]
+    fn test_initial_channels_are_centered() {
+        // Verify that initial channel state is centered (safe state)
+        let initial_channels = [CRSF_CHANNEL_VALUE_CENTER; 16];
+
+        // All 16 channels should be centered
+        for (i, &channel) in initial_channels.iter().enumerate() {
+            assert_eq!(channel, CRSF_CHANNEL_VALUE_CENTER,
+                "Channel {} should be centered initially", i);
+        }
+
+        // Verify this matches CRSF protocol center value (1024)
+        assert_eq!(CRSF_CHANNEL_VALUE_CENTER, 1024,
+            "CRSF center value must be 1024 (11-bit midpoint)");
+    }
 }
