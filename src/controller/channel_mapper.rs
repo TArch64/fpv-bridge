@@ -139,7 +139,8 @@ impl ChannelMapper {
     ///
     /// # Returns
     ///
-    /// Array of 16 channel values (0-2047).
+    /// Array of 16 channel values (0-2047). Channels 1-8 are mapped from controller
+    /// inputs. Channels 9-16 remain at the CRSF center value (1024).
     ///
     /// # Examples
     ///
@@ -196,7 +197,9 @@ impl ChannelMapper {
     /// Maps an inverted axis value (0-255) to CRSF range (0-2047).
     /// Inverted means 0 -> 2047 and 255 -> 0.
     fn map_axis_inverted(&self, value: i32, channel: usize) -> u16 {
-        let inverted = AXIS_MAX - value;
+        // Clamp before subtraction to prevent integer overflow on invalid inputs
+        let clamped = value.clamp(AXIS_MIN, AXIS_MAX);
+        let inverted = AXIS_MAX - clamped;
         let mapped = Self::scale_axis_to_crsf(inverted);
         self.apply_reverse(mapped, channel)
     }
@@ -519,8 +522,8 @@ mod tests {
 
     #[test]
     fn test_switch_constants() {
-        assert_eq!(SWITCH_OFF, 0);
-        assert_eq!(SWITCH_ON, 2047);
+        assert_eq!(SWITCH_OFF, CRSF_CHANNEL_VALUE_MIN);
+        assert_eq!(SWITCH_ON, CRSF_CHANNEL_VALUE_MAX);
     }
 
     #[test]
