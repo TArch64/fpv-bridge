@@ -33,10 +33,24 @@ jobs:
           cargo install cargo-llvm-cov --version 0.6.0 || cargo install cargo-llvm-cov
           cargo llvm-cov --version
 
-      - name: Run tests
-        run: cargo llvm-cov --all-features --workspace --cobertura --output-path cobertura.xml
+      - name: Run tests with coverage
+        run: |
+          # Generate cobertura XML for compatibility
+          cargo llvm-cov --all-features --workspace --cobertura --output-path cobertura.xml
 
-      - name: Code Coverage Report
+          # Generate detailed text report showing file-level coverage
+          cargo llvm-cov --all-features --workspace > coverage-report.txt
+
+          # Create markdown summary with file-level breakdown
+          echo "## Code Coverage by File" > coverage-summary.md
+          echo "" >> coverage-summary.md
+          echo "Detailed breakdown of test coverage by source file:" >> coverage-summary.md
+          echo "" >> coverage-summary.md
+          echo "\`\`\`" >> coverage-summary.md
+          cat coverage-report.txt >> coverage-summary.md
+          echo "\`\`\`" >> coverage-summary.md
+
+      - name: Package Coverage Summary
         uses: irongut/CodeCoverageSummary@v1.3.0
         continue-on-error: true
         with:
@@ -45,10 +59,20 @@ jobs:
           format: markdown
           output: both
 
+      - name: Combine Coverage Reports
+        if: github.event_name == 'pull_request'
+        run: |
+          echo "## Summary by Package" > combined-coverage.md
+          cat code-coverage-results.md >> combined-coverage.md
+          echo "" >> combined-coverage.md
+          echo "---" >> combined-coverage.md
+          echo "" >> combined-coverage.md
+          cat coverage-summary.md >> combined-coverage.md
+
       - name: Add Coverage PR Comment
         uses: marocchino/sticky-pull-request-comment@v2
         if: github.event_name == 'pull_request'
         continue-on-error: true
         with:
           recreate: true
-          path: code-coverage-results.md
+          path: combined-coverage.md
